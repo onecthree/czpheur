@@ -1,8 +1,5 @@
 
-#define PCRE2_CODE_UNIT_WIDTH 8
-
 #include <string.h>
-#include <pcre2.h>
 
 #include "regexp.h"
 
@@ -98,7 +95,12 @@ static inline size_t _regexp_strlen( PCRE2_UCHAR* str )
     size_t length = 0;
 
     for( ; *str != '\0'; (*str)++ )
+    {
+        if( length > MAX_SAFE_PCRE2_UCHAR_LENGTH )
+            return (size_t)(0);
+        
         length++;
+    }
 
     return length;
 }
@@ -124,7 +126,7 @@ char const* regexp_replace(
 
     pcre2_jit_compile(re, PCRE2_JIT_COMPLETE);
 
-    PCRE2_UCHAR result[1024];
+    PCRE2_UCHAR result[MAX_SAFE_PCRE2_UCHAR_LENGTH];
     PCRE2_SIZE outlen = sizeof(result) / sizeof(PCRE2_UCHAR);
 
     int rc = pcre2_substitute(re, subject, PCRE2_ZERO_TERMINATED, 0, PCRE2_SUBSTITUTE_GLOBAL | PCRE2_SUBSTITUTE_EXTENDED, 0, 0, replacement, PCRE2_ZERO_TERMINATED, result, &outlen);

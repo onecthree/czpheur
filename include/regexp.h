@@ -9,6 +9,8 @@
 #include <stdbool.h>
 #include <pcre2.h>
 
+#define MAX_SAFE_PCRE2_UCHAR_LENGTH 1024
+
 static inline size_t _regexp_strlen( PCRE2_UCHAR* foo );
 
 bool regexp_match(
