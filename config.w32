@@ -1,0 +1,7 @@
+ARG_ENABLE('zpheur', 'zpheur support', 'no');
+
+if (PHP_ZPHEUR != 'no') {
+	AC_DEFINE('HAVE_ZPHEUR', 1, 'zpheur support enabled');
+
+	EXTENSION('zpheur', 'zpheur.c', null, '/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1');
+}

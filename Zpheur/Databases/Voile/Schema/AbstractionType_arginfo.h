@@ -1,0 +1,22 @@
+
+#ifndef H_ZPHEUR_DATABASES_VOILE_SCHEMA_ABSTRACTIONTYPE
+#define H_ZPHEUR_DATABASES_VOILE_SCHEMA_ABSTRACTIONTYPE
+
+#include "php/20220829/ext/standard/info.h"
+#include "php/20220829/ext/standard/php_standard.h"
+
+#include "php/20220829/Zend/zend_API.h"
+#include "php/20220829/Zend/zend_interfaces.h"
+#include "php/20220829/Zend/zend_exceptions.h"
+
+
+zend_class_entry* zpheur_databases_voile_model_schema_abstractiontype_aobjectid_class_entry;
+zend_class_entry* zpheur_databases_voile_model_schema_abstractiontype_astring_class_entry;
+zend_class_entry* zpheur_databases_voile_model_schema_abstractiontype_anumber_class_entry;
+zend_class_entry* zpheur_databases_voile_model_schema_abstractiontype_aboolean_class_entry;
+zend_class_entry* zpheur_databases_voile_model_schema_abstractiontype_adatetime_class_entry;
+zend_class_entry* zpheur_databases_voile_model_schema_abstractiontype_aarray_class_entry;
+zend_class_entry* zpheur_databases_voile_model_schema_abstractiontype_aobject_class_entry;
+zend_class_entry* zpheur_databases_voile_model_schema_abstractiontype_adecimal128_class_entry;
+
+#endif
