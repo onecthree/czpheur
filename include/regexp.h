@@ -1,8 +1,15 @@
-#pragma once
+
+#ifndef H_INCLUDE_REGEXP
+#define H_INCLUDE_REGEXP
+
+#define PCRE2_CODE_UNIT_WIDTH 8
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <pcre2.h>
+
+static inline size_t _regexp_strlen( PCRE2_UCHAR* foo );
 
 bool regexp_match(
 	unsigned char* const 	pattern_src,
@@ -25,3 +32,5 @@ char const* regexp_replace(
 	unsigned char* const 	replacement_v,
 	int 					*match
 );
+
+#endif

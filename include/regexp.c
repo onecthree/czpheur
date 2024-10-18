@@ -93,6 +93,16 @@ bool regexp_match_result(
     return false;
 }
 
+static inline size_t _regexp_strlen( PCRE2_UCHAR* str )
+{
+    size_t length = 0;
+
+    for( ; *str != '\0'; (*str)++ )
+        length++;
+
+    return length;
+}
+
 char const* regexp_replace(
     unsigned char* const    pattern_v,
     unsigned char* const    subject_v,
@@ -121,7 +131,8 @@ char const* regexp_replace(
 
     pcre2_code_free(re);
         
-    size_t result_size = strlen((char* const)result);
+    // size_t result_size = strlen((char* const)result);
+    size_t result_size = _regexp_strlen(result);
     char* retval = malloc(result_size * sizeof(char));
     strncpy(retval, (char* const)result, result_size);
     
