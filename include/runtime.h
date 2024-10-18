@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef H_INCLUDE_RUNTIME
+#define H_INCLUDE_RUNTIME
 
 #include "php.h"
 #include "php_main.h"
@@ -69,3 +71,5 @@ zval* php_class_call_method(
     );
 
 char const *ZTYPE_TO_STR( int M_TYPE );
+
+#endif

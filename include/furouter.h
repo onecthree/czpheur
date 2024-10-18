@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef H_INCLUDE_FUROUTER
+#define H_INCLUDE_FUROUTER
 
 #include <php.h>
 
@@ -177,3 +179,5 @@ int static_furouter_target_uri_parse( char* const url, void* ptr_local_uri_targe
 onec_string* static_furouter_route_uri_parse( char* const route, char* const class_name, char* const method_name );
 
 int static_furouter_finder( char* target_list_src, size_t target_list_len, furouter_fund** route_fund, furouter_target_uri* target_uri_src, size_t target_uri_len, HashTable** placeholder, onec_string* path_value );
+
+#endif
