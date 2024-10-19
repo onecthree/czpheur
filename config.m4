@@ -4,8 +4,6 @@ PHP_ARG_ENABLE([zpheur],
     [Enable zpheur support])],
   [no])
 
-php_mongodb_ext="1"
-php_mongodb_const="-DZPHEUR_REQUIRE_VOILE"
 TARGET_CFLAG="-fcommon -lpcre-2-8"
 
 if test "$PHP_ZPHEUR" != "no"; then
@@ -57,18 +55,10 @@ if test "$PHP_ZPHEUR" != "no"; then
   AC_MSG_CHECKING([for PHP MongoDB extension])
     mongodb_version=`php --ri mongodb | grep "extension version" | sed "s/MongoDB extension version => //g"`
     if test -z "$mongodb_version"; then
-      dnl ga ada
-      php_mongodb_ext="0"
       AC_MSG_RESULT([not installed, skip Voile include])
     else
-      dnl ada
-      AC_MSG_RESULT([$mongodb_version, ok])
-    fi
-
-  AC_MSG_CHECKING([for Voile module])
-    if test "$php_mongodb_ex" != "0"; then
-      TARGET_CFLAG="$TARGET_CFLAG $php_mongodb_const"
-      AC_MSG_RESULT([ok])
+      TARGET_CFLAG="$TARGET_CFLAG -DZPHEUR_REQUIRE_VOILE"
+      AC_MSG_RESULT([$mongodb_version, added Voile include])
     fi
 
   PHP_NEW_EXTENSION(
