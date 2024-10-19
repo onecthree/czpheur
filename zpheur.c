@@ -119,6 +119,7 @@ PHP_MINIT_FUNCTION(zpheur)
 
 	ZEND_MODULE_STARTUP_N(Zpheur_Files_Mime)(INIT_FUNC_ARGS_PASSTHRU);
 		
+	#ifdef ZPHEUR_REQUIRE_VOILE
 	ZEND_MODULE_STARTUP_N(Zpheur_Databases_Voile)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Databases_Voile_Model)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Databases_Voile_Collection)(INIT_FUNC_ARGS_PASSTHRU);
@@ -133,6 +134,7 @@ PHP_MINIT_FUNCTION(zpheur)
 	ZEND_MODULE_STARTUP_N(Zpheur_Databases_Voile_Schema_AbstractionType_AArray)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Databases_Voile_Schema_AbstractionType_AObject)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Databases_Voile_Schema_AbstractionType_ADecimal128)(INIT_FUNC_ARGS_PASSTHRU);
+	#endif
 
 	ZEND_MODULE_STARTUP_N(Zpheur_Databases_Phase)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Databases_Phase_Model)(INIT_FUNC_ARGS_PASSTHRU);

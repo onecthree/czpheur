@@ -72,6 +72,7 @@ ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Routing_Route);
 
 ZEND_MINIT_FUNCTION(Zpheur_Files_Mime);
 
+#ifdef ZPHEUR_REQUIRE_VOILE
 ZEND_MINIT_FUNCTION(Zpheur_Databases_Voile);
 ZEND_MINIT_FUNCTION(Zpheur_Databases_Voile_Model);
 ZEND_MINIT_FUNCTION(Zpheur_Databases_Voile_Collection);
@@ -86,6 +87,7 @@ ZEND_MINIT_FUNCTION(Zpheur_Databases_Voile_Schema_AbstractionType_ADateTime);
 ZEND_MINIT_FUNCTION(Zpheur_Databases_Voile_Schema_AbstractionType_AArray);
 ZEND_MINIT_FUNCTION(Zpheur_Databases_Voile_Schema_AbstractionType_AObject);
 ZEND_MINIT_FUNCTION(Zpheur_Databases_Voile_Schema_AbstractionType_ADecimal128);
+#endif
 
 ZEND_MINIT_FUNCTION(Zpheur_Databases_Phase);
 ZEND_MINIT_FUNCTION(Zpheur_Databases_Phase_Model);
