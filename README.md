@@ -47,6 +47,18 @@ $ ./configure
 $ make
 $ sudo make install
 ```
+While ```$ sudo make install``` only move the shared object ```zpheur.so``` to PHP extension directory, you may manually install ```zpheur.ini``` to PHP configuration directory. If the PHP installation using ```apt``` package manager via ```ppa:ondrej/php```, usually located in the following directory ```/etc/php/8.x```.\
+\
+For the installation:
+```bash
+# Under czpheur clone directory
+$ sudo mv zpheur.ini /etc/php/8.x/mods-available/
+
+# Doing a symbolic link for PHP CLI and FPM target
+$ sudo ln -s /etc/php/8.x/mods-available/zpheur.ini /etc/php/8.x/cli/conf.d/22-zpheur.ini
+$ sudo ln -s /etc/php/8.x/mods-available/zpheur.ini /etc/php/8.x/fpm/conf.d/22-zpheur.ini
+```
+If you use PHP-FPM, may do restart ```php8.x-fpm``` for load the extension.
 
 ## Basic Usage
 Install project template using composer:
