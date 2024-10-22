@@ -39,12 +39,19 @@ PHP_METHOD(Dotenv, serialize)
 
     zval* key_value = zend_this_read_property("env");
 
-	onec_string* env_serialized = dotenv_cache_save(zend_hash_index_find(Z_ARR_P(key_value), 0));
-	php_stream* env_serialized_fd = php_stream_open_wrapper_ex(cache_path_src, "w", 0 | REPORT_ERRORS, NULL, NULL);
-    php_stream_write(env_serialized_fd, env_serialized->val, env_serialized->len); 
+    if( Z_TYPE_P(key_value) != IS_NULL )
+    {
+		onec_string* env_serialized = dotenv_cache_save(zend_hash_index_find(Z_ARR_P(key_value), 0));
+		php_stream* env_serialized_fd = php_stream_open_wrapper_ex(cache_path_src, "w", 0 | REPORT_ERRORS, NULL, NULL);
+	    php_stream_write(env_serialized_fd, env_serialized->val, env_serialized->len); 
 
-	onec_string_release(env_serialized);
-	php_stream_close(env_serialized_fd);
+		onec_string_release(env_serialized);
+		php_stream_close(env_serialized_fd);
+	}
+	else
+	{
+		php_error_docref(NULL, E_ERROR, "dotenv file must be parsed before serialization");
+	}
 
     RETURN_ZVAL(getThis(), 1, 0);
 }
