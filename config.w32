@@ -1,3 +1,4 @@
+dnl Windows platform are currently not supported
 ARG_ENABLE('zpheur', 'zpheur support', 'no');
 
 if (PHP_ZPHEUR != 'no') {
