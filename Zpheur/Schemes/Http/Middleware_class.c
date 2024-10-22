@@ -23,7 +23,11 @@ PHP_METHOD(Middleware, __construct)
         Z_PARAM_ZVAL(middlewares);
     ZEND_PARSE_PARAMETERS_END();
 
+    if( middlewares == NULL || Z_TYPE_P(middlewares) != IS_ARRAY )
+        array_init(middlewares);
+
     zend_this_update_property("middlewares", middlewares);
+
 
     zval globals_empty;
     array_init(&globals_empty);
