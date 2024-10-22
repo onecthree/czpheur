@@ -2,12 +2,12 @@
 #ifndef H_ZPHEUR_DATABASES_VOILE_COLLECTION
 #define H_ZPHEUR_DATABASES_VOILE_COLLECTION
 
-#include "php/20220829/ext/standard/info.h"
-#include "php/20220829/ext/standard/php_standard.h"
+#include "ext/standard/info.h"
+#include "ext/standard/php_standard.h"
 
-#include "php/20220829/Zend/zend_API.h"
-#include "php/20220829/Zend/zend_interfaces.h"
-#include "php/20220829/Zend/zend_exceptions.h"
+#include "Zend/zend_API.h"
+#include "Zend/zend_interfaces.h"
+#include "Zend/zend_exceptions.h"
 
 
 typedef int (*c_spl_iterator_apply_func_t)(zend_object_iterator *iter, void *puser, bool once);

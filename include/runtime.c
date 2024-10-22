@@ -7,7 +7,7 @@
 
 #include "ext/spl/php_spl.h"
 #include "ext/spl/spl_functions.h"
-#include "ext/spl/spl_engine.h"
+// #include "ext/spl/spl_engine.h"
 #include "ext/spl/spl_array.h"
 #include "ext/spl/spl_directory.h"
 #include "ext/spl/spl_iterators.h"
