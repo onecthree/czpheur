@@ -76,6 +76,9 @@ int static_furouter_target_uri_parse(
                             case PATH_TYPE_ALNUM:
                                 local_uri_target_src[local_uri_target_len].type = PATH_IMPL_ALNUM;
                             break;
+                            case PATH_TYPE_ALPHA | PATH_TYPE_RANDOM:
+                            case PATH_TYPE_NUM | PATH_TYPE_RANDOM:
+                            case PATH_TYPE_ALNUM | PATH_TYPE_RANDOM:
                             case PATH_TYPE_RANDOM:
                                 local_uri_target_src[local_uri_target_len].type = PATH_IMPL_RANDOM;
                             break;
@@ -190,7 +193,14 @@ int static_furouter_target_uri_parse(
     return 0;
 }
 
-onec_string* static_furouter_route_uri_parse( char* const route, char* const class_name, char* const method_name )
+/**
+ * Parsing all route files web
+ */
+onec_string* static_furouter_route_uri_parse(
+    char* const route,
+    char* const class_name,
+    char* const method_name
+)
 {
     int     error_no = -1;
 
@@ -251,10 +261,14 @@ onec_string* static_furouter_route_uri_parse( char* const route, char* const cla
                     case PATH_TYPE_ALNUM:
                         inner_impl = PATH_IMPL_ALNUM;
                     break;
+                    case PATH_TYPE_ALPHA | PATH_TYPE_RANDOM:
+                    case PATH_TYPE_NUM | PATH_TYPE_RANDOM:
+                    case PATH_TYPE_ALNUM | PATH_TYPE_RANDOM:
                     case PATH_TYPE_RANDOM:
                         inner_impl = PATH_IMPL_RANDOM;
                     break;
                     default:
+                        // php_printf("--$ %d\n", context_type);
                         inner_impl = PATH_IMPL_ASTERIK;
                     break;
                 }
