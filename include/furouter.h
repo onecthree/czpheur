@@ -108,15 +108,22 @@ typedef struct
 #define PATH_IMPL_ALNUM                         '&'
 #define PATH_IMPL_RANDOM                        '$'
 
-#define PLACEHOLDER_TYPE_RANDOM                 12491219
-#define PLACEHOLDER_TYPE_ALPHA                  1090337
-#define PLACEHOLDER_TYPE_ALNUM                  1090279
-#define PLACEHOLDER_TYPE_NUM                    12279
+// #define PLACEHOLDER_TYPE_RANDOM                 12491219
+// #define PLACEHOLDER_TYPE_ALPHA                  1090337
+// #define PLACEHOLDER_TYPE_ALNUM                  1090279
+// #define PLACEHOLDER_TYPE_NUM                    12279
+
+#define PLACEHOLDER_TYPE_RANDOM                 11497110100111109
+#define PLACEHOLDER_TYPE_ALPHA                  9710811210497
+#define PLACEHOLDER_TYPE_ALNUM                  97108110117109
+#define PLACEHOLDER_TYPE_NUM                    110117109
+#define PLACEHOLDER_TYPE_ANY                    97110121
 
 #define PLACEHOLDER_IMPL_RANDOM                 '-'
 #define PLACEHOLDER_IMPL_ALPHA                  '^'
 #define PLACEHOLDER_IMPL_ALNUM                  '+'
 #define PLACEHOLDER_IMPL_NUM                    '!'
+#define PLACEHOLDER_IMPL_ANY                    '.'
 
 typedef union _furouter_target_type_path
 {

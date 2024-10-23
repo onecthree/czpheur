@@ -437,7 +437,20 @@ onec_string* static_furouter_route_uri_parse(
                 switch( context.input )
                 {
                     case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
-                        inner_value *= 10;
+                        // inner_value *= 10;
+                        // inner_value += context.input;
+                        switch( context.input )
+                        {
+                            case 100 ... 126:
+                                inner_value *= 1000;
+                            break;
+                            case 32 ... 99:
+                                inner_value *= 100;
+                            break;
+                            default:
+                                goto php_end_parse;
+                            break;
+                        }   
                         inner_value += context.input;
 
                         if( inner_value > PLACEHOLDER_TYPE_RANDOM )
@@ -463,6 +476,9 @@ onec_string* static_furouter_route_uri_parse(
                             break;
                             case PLACEHOLDER_TYPE_NUM:
                                 inner_impl = PLACEHOLDER_IMPL_NUM;
+                            break;
+                            case PLACEHOLDER_TYPE_ANY:
+                                inner_impl = PLACEHOLDER_IMPL_ANY;
                             break;
                             default:
                                 error_no = 6;
@@ -604,6 +620,12 @@ int static_furouter_finder(
                             break;
                         }
                     break;
+                    case PLACEHOLDER_IMPL_ANY:
+                        if( _target_uri_src.type != PATH_IMPL_ASTERIK )
+                            context.state = STATE_FINDER_PLACEHOLDER_SCOPE;
+                        else
+                            goto return_not_found;
+                    break; 
                 }
             break;
             case STATE_FINDER_WORD_CMP_SCOPE:
