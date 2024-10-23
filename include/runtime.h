@@ -70,6 +70,6 @@ zval* php_class_call_method(
         bool            silent
     );
 
-char const *ZTYPE_TO_STR( int M_TYPE );
+char* const ZTYPE_TO_STR( char M_TYPE );
 
 #endif

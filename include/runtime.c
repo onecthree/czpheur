@@ -497,7 +497,7 @@ zval* php_class_call_method(
     return return_value;
 }
 
-char const *ZTYPE_TO_STR( int M_TYPE )
+char* const ZTYPE_TO_STR( char M_TYPE )
 {
     switch( M_TYPE )
     {
@@ -515,6 +515,9 @@ char const *ZTYPE_TO_STR( int M_TYPE )
         break;
         case IS_OBJECT:
             return "stdClass";
+        break;
+        default:
+            return "null";
         break;
     }
 }

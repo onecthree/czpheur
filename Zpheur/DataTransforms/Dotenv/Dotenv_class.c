@@ -66,6 +66,17 @@ PHP_METHOD(Dotenv, unserialize)
 		Z_PARAM_ZVAL(callback);
 	ZEND_PARSE_PARAMETERS_END();
 
+	if( Z_TYPE_P(dotenv_cachesource) == IS_TRUE )
+		goto return_exit;
+
+	if( Z_TYPE_P(callback) != IS_CALLABLE && Z_TYPE_P(callback) != IS_OBJECT )
+	{
+		php_error_docref(
+			NULL, E_ERROR,
+			"Argument #2 ($callback) must be a valid callback, %s given",
+			ZTYPE_TO_STR(Z_TYPE_P(callback)));
+	}
+
 	if( Z_TYPE_P(dotenv_cachesource) == IS_ARRAY )
 	{
 		zend_this_update_property("env", dotenv_cachesource);
@@ -86,7 +97,15 @@ PHP_METHOD(Dotenv, unserialize)
 
 		RETURN_NULL();
 	}
+	else
+	{
+		php_error_docref(
+			NULL, E_ERROR,
+			"Argument #1 ($data) must be of type array|true, %s given",
+			ZTYPE_TO_STR(Z_TYPE_P(dotenv_cachesource)));
+	}
 
+	return_exit:
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
