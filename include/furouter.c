@@ -268,7 +268,6 @@ onec_string* static_furouter_route_uri_parse(
                         inner_impl = PATH_IMPL_RANDOM;
                     break;
                     default:
-                        // php_printf("--$ %d\n", context_type);
                         inner_impl = PATH_IMPL_ASTERIK;
                     break;
                 }
