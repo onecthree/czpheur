@@ -8,7 +8,7 @@
 extern zend_module_entry zpheur_module_entry;
 #define phpext_zpheur_ptr &zpheur_module_entry
 
-#define PHP_ZPHEUR_VERSION_NUMBER 	"0.2.1"
+#define PHP_ZPHEUR_VERSION_NUMBER 	"0.2.010"
 #define PHP_ZPHEUR_VERSION_TAG		"alpha"
 
 char* tocalver( char* val, size_t len );
@@ -36,6 +36,8 @@ ZEND_FUNCTION(clfile);
 ZEND_FUNCTION(filetoclass);
 ZEND_FUNCTION(contains);
 ZEND_FUNCTION(csrf_token);
+ZEND_FUNCTION(zpheur_version);
+
 
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Http_DefaultAction);
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Reflection_ActionResolver);

@@ -30,11 +30,10 @@ static PHP_GINIT_FUNCTION(zpheur)
 #include <Zpheur/Functions/is_appns_arginfo.h>
 #include <Zpheur/Functions/clfile_arginfo.h>
 #include <Zpheur/Functions/filetoclass_arginfo.h>
-
+#include <Zpheur/Functions/zpheur_version_arginfo.h>
 #include <Zpheur/Strings/contains_arginfo.h>
-#include <Zpheur/Encryptions/Random/Generator/csrf_token_arginfo.h>
 
-// #include "include/encryptions/random/generator/csrf_token/csrf_token_function.h"
+#include <Zpheur/Encryptions/Random/Generator/csrf_token_arginfo.h>
 
 static const zend_function_entry ext_functions[] = {
 	ZEND_NS_FE("Zpheur\\DataTransforms\\Dotenv", env, env_arginfo)
@@ -42,6 +41,7 @@ static const zend_function_entry ext_functions[] = {
 	ZEND_NS_FE("Zpheur\\Globals", is_appns, is_appns_arginfo)
 	ZEND_NS_FE("Zpheur\\Globals", clfile, arginfo_clfile)
 	ZEND_NS_FE("Zpheur\\Globals", filetoclass, filetoclass_arginfo)
+	ZEND_FE(zpheur_version, zpheur_version_arginfo)
 
 	ZEND_NS_FE("Zpheur\\Strings", contains, contains_arginfo)
 	ZEND_NS_FE("Zpheur\\Encryptions\\Random\\Generator", csrf_token, csrf_token_arginfo)
@@ -69,19 +69,22 @@ void zpheur_error_cb( int errtype, zend_string *errfile, const uint32_t errline,
 /* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(zpheur)
 {
-	// array_init(&csrf_true_lists);
+	zend_register_stringl_constant("EMPTY_STRING", sizeof("EMPTY_STRING") - 1, "", sizeof("") - 1, CONST_CS | CONST_PERSISTENT, module_number);
+	zend_register_stringl_constant("ZPHEUR", sizeof("ZPHEUR") - 1, "Zpheur", sizeof("Zpheur") - 1, CONST_CS | CONST_PERSISTENT, module_number);
 
-	zend_register_stringl_constant		("EMPTY_STRING", 		sizeof("EMPTY_STRING") - 1, "", sizeof("") - 1, CONST_CS | CONST_PERSISTENT, module_number);
-	zend_register_stringl_constant		("ZPHEUR", 				sizeof("ZPHEUR") - 1, "Zpheur", sizeof("Zpheur") - 1, CONST_CS | CONST_PERSISTENT, module_number);
+	zend_register_stringl_constant("PRODUCTION", sizeof("PRODUCTION") - 1, "production", sizeof("production") - 1, CONST_CS | CONST_PERSISTENT, module_number);
+	zend_register_stringl_constant("STAGING", sizeof("STAGING") - 1, "staging", sizeof("staging") - 1, CONST_CS | CONST_PERSISTENT, module_number);
+	zend_register_stringl_constant("DEVELOPMENT", sizeof("DEVELOPMENT") - 1, "development", sizeof("development") - 1, CONST_CS | CONST_PERSISTENT, module_number);
+	zend_register_long_constant("PERMANENT_REDIRECT", sizeof("PERMANENT_REDIRECT") - 1, 1, CONST_CS | CONST_PERSISTENT, module_number);
 
-	zend_register_stringl_constant		("PRODUCTION", 			sizeof("PRODUCTION") - 1, "production", sizeof("production") - 1, CONST_CS | CONST_PERSISTENT, module_number);
-	zend_register_stringl_constant		("STAGING", 			sizeof("STAGING") - 1, "staging", sizeof("staging") - 1, CONST_CS | CONST_PERSISTENT, module_number);
-	zend_register_stringl_constant		("DEVELOPMENT", 		sizeof("DEVELOPMENT") - 1, "development", sizeof("development") - 1, CONST_CS | CONST_PERSISTENT, module_number);
-	zend_register_long_constant			("PERMANENT_REDIRECT", 	sizeof("PERMANENT_REDIRECT") - 1, 1, CONST_CS | CONST_PERSISTENT, module_number);
+	zend_register_long_constant("PHP_ERROR_HANDLER", sizeof("PHP_ERROR_HANDLER") - 1, 1 << 0, CONST_CS | CONST_PERSISTENT, module_number);
+	zend_register_long_constant("ZCLI_ERROR_HANDLER", sizeof("ZCLI_ERROR_HANDLER") - 1, 1 << 1, CONST_CS | CONST_PERSISTENT, module_number);
+	zend_register_long_constant("ZWEB_ERROR_HANDLER", sizeof("ZWEB_ERROR_HANDLER") - 1, 1 << 2, CONST_CS | CONST_PERSISTENT, module_number);
 
-	zend_register_long_constant			("PHP_ERROR_HANDLER", 	sizeof("PHP_ERROR_HANDLER") - 1, 1 << 0, CONST_CS | CONST_PERSISTENT, module_number);
-	zend_register_long_constant			("ZCLI_ERROR_HANDLER", 	sizeof("ZCLI_ERROR_HANDLER") - 1, 1 << 1, CONST_CS | CONST_PERSISTENT, module_number);
-	zend_register_long_constant			("ZWEB_ERROR_HANDLER", 	sizeof("ZWEB_ERROR_HANDLER") - 1, 1 << 2, CONST_CS | CONST_PERSISTENT, module_number);
+	/* {{{ Constant register for "zpheur_function" */
+	zend_register_long_constant("Z_ONLY_TAG", sizeof("Z_ONLY_TAG") - 1, 1 << 1, CONST_CS | CONST_PERSISTENT, module_number);
+	zend_register_long_constant("Z_ONLY_NUMBER", sizeof("Z_ONLY_NUMBER") - 1, 1 << 2, CONST_CS | CONST_PERSISTENT, module_number);
+	/* }}} */ 
 
 
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Http_DefaultAction)(INIT_FUNC_ARGS_PASSTHRU);

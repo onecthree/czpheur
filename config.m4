@@ -69,6 +69,7 @@ if test "$PHP_ZPHEUR" != "no"; then
       Zpheur/Functions/is_appns_function.c                              \
       Zpheur/Functions/clfile_function.c                                \
       Zpheur/Functions/filetoclass_function.c                           \
+      Zpheur/Functions/zpheur_version_function.c                        \
                                                                         \
       Zpheur/Actions/Http/DefaultAction_class.c                         \
       Zpheur/Actions/Reflection/ActionResolver_class.c                  \
