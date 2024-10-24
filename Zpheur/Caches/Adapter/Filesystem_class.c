@@ -11,11 +11,6 @@
 
 PHP_METHOD(Filesystem, __construct)
 {
-    // char*        name_src = NULL;
-    // size_t       name_len = 0;
-    // zend_ulong   ttl = 0;
-    // char*        path_src = NULL;
-    // size_t       path_len = 0;
     zval*           name;
     zval*           ttl;
     zval*           path;
