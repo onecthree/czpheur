@@ -56,6 +56,11 @@ PHP_METHOD(Dotenv, serialize)
     RETURN_ZVAL(getThis(), 1, 0);
 }
 
+/**
+ * As first argument is receive cached dotenv file,
+ * it receive as array, if otherwise would be return null from
+ * the function. 
+ */
 PHP_METHOD(Dotenv, unserialize)
 {	
 	zval* dotenv_cachesource = NULL;
@@ -66,44 +71,32 @@ PHP_METHOD(Dotenv, unserialize)
 		Z_PARAM_ZVAL(callback);
 	ZEND_PARSE_PARAMETERS_END();
 
-	if( Z_TYPE_P(dotenv_cachesource) == IS_TRUE )
+	if( Z_TYPE_P(dotenv_cachesource) != IS_ARRAY )
 		goto return_exit;
 
 	if( Z_TYPE_P(callback) != IS_CALLABLE && Z_TYPE_P(callback) != IS_OBJECT )
-	{
 		php_error_docref(
 			NULL, E_ERROR,
 			"Argument #2 ($callback) must be a valid callback, %s given",
 			ZTYPE_TO_STR(Z_TYPE_P(callback)));
-	}
 
-	if( Z_TYPE_P(dotenv_cachesource) == IS_ARRAY )
+	/* {{{ */
+	zend_this_update_property("env", dotenv_cachesource);
+	ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(dotenv_cachesource), zend_string* env_name, zval* env_value)
 	{
-		zend_this_update_property("env", dotenv_cachesource);
+		zval* to_value = zend_hash_index_find(Z_ARR_P(env_value), 2);
+		zend_string* to_str_value = zval_get_string(to_value);
 
-		ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(dotenv_cachesource), zend_string* env_name, zval* env_value)
-		{
-			zval* to_value = zend_hash_index_find(Z_ARR_P(env_value), 2);
-			zend_string* to_str_value = zval_get_string(to_value);
+		zval* callback_params = safe_emalloc(2, sizeof(zval), 0);
+		ZVAL_STRINGL(&callback_params[0], env_name->val, env_name->len);
+		ZVAL_STRINGL(&callback_params[1], to_str_value->val, to_str_value->len);
 
-			zval* callback_params = safe_emalloc(2, sizeof(zval), 0);
-			ZVAL_STRINGL(&callback_params[0], env_name->val, env_name->len);
-			ZVAL_STRINGL(&callback_params[1], to_str_value->val, to_str_value->len);
-
-			php_call_closure(callback, Z_OBJ_P(callback), 2, callback_params);
-		}
-		ZEND_HASH_FOREACH_END();
-
-
-		RETURN_NULL();
+		php_call_closure(callback, Z_OBJ_P(callback), 2, callback_params);
 	}
-	else
-	{
-		php_error_docref(
-			NULL, E_ERROR,
-			"Argument #1 ($data) must be of type array|true, %s given",
-			ZTYPE_TO_STR(Z_TYPE_P(dotenv_cachesource)));
-	}
+	ZEND_HASH_FOREACH_END();
+
+	RETURN_NULL();
+	/* }}} */
 
 	return_exit:
 	RETURN_ZVAL(getThis(), 1, 0);

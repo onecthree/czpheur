@@ -11,10 +11,10 @@
 
 PHP_METHOD(RoutingDispatcher, __construct)
 {
-    zval* route_source;
+    zval* route_source = NULL;
 
     ZEND_PARSE_PARAMETERS_START(1, 1)
-        Z_PARAM_ZVAL(route_source)
+        Z_PARAM_ARRAY(route_source)
     ZEND_PARSE_PARAMETERS_END();
 
     zend_this_update_property("route_source", route_source);
