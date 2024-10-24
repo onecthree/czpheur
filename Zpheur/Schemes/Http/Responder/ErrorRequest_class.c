@@ -7,19 +7,6 @@
 #include <include/runtime.h>
 #include "ErrorRequest_arginfo.h"
 
-PHP_METHOD(ErrorRequest, foo)
-{
-    ZEND_PARSE_PARAMETERS_NONE();
-
-    sapi_header_line ctr = {0};
-
-    ctr.line = "content-type: text/plain";
-    ctr.line_len = sizeof("content-type: text/plain") - 1;
-
-    sapi_header_op(SAPI_HEADER_REPLACE, &ctr);
-
-    php_printf("hello all");
-}
 
 ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Responder_ErrorRequest)
 {
