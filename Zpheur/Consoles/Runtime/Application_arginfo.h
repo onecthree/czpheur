@@ -13,7 +13,8 @@
 #include <include/onecstr.h>
 
 
-static int console_class_method_parser( char* base_namespace, char* input_src, size_t input_len, onec_string** target_class, onec_string** target_method );
+static int console_class_method_parser( char* base_namespace, zend_string* target_action_class, onec_string** target_class, onec_string** target_method );
+static int console_subns_class_method_parser( char* base_namespace, zend_string* target_action_class, onec_string** target_class );
 
 zend_class_entry* zpheur_consoles_runtime_application_class_entry;
 

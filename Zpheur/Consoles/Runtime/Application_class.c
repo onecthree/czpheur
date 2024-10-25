@@ -3,6 +3,7 @@
 #include<Zend/zend_types.h>
 #include <php_zpheur.h>
 
+#include <ctype.h>
 #include <string.h>
 #include <zpheur.h>
 #include <include/onecstr.h>
@@ -74,16 +75,21 @@ PHP_METHOD(Application, withBaseNamespace)
 #define CONSOLE_STATE_CLASS    			4
 #define CONSOLE_STATE_METHOD    		5
 
-static int console_class_method_parser( char* base_namespace, char* input_src, size_t input_len, onec_string** target_class, onec_string** target_method )
+static int console_class_method_parser(
+	char* base_namespace,
+	zend_string* target_class_zs,
+	onec_string** target_class,
+	onec_string** target_method
+)
 {
 	onec_string_append(*target_class, 1, base_namespace);
 
 	int 	state = CONSOLE_STATE_INIT;
 	char 	input;
 
-	for( int index = 0; index < input_len; index += 1 )
+	for( int index = 0; index < target_class_zs->len; index += 1 )
 	{
-		input = input_src[index];
+		input = target_class_zs->val[index];
 
 		switch( state )
 		{
@@ -159,6 +165,94 @@ static int console_class_method_parser( char* base_namespace, char* input_src, s
 	return 0;
 }
 
+static int console_subns_class_method_parser(
+	char* base_namespace,
+	zend_string* target_class_zs,
+	onec_string** target_class
+)
+{
+	onec_string_append(*target_class, 1, base_namespace);
+
+	int 	state = CONSOLE_STATE_INIT;
+	char 	input;
+
+	for( int index = 0; index < target_class_zs->len; index += 1 )
+	{
+		input = target_class_zs->val[index];
+
+		switch( state )
+		{
+			case CONSOLE_STATE_INIT:
+				switch( input )
+				{
+					case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
+					case TOKEN_SYMBOL_UNDERSCORE:
+						index -= 1;
+					case TOKEN_SYMBOL_SLASH:
+						state = CONSOLE_STATE_BEGIN_CLASS;
+					break;
+					case TOKEN_SYMBOL_COLON:
+						state = CONSOLE_STATE_BEGIN_METHOD;
+					break;
+					default:
+						goto parse_error;
+					break;
+				}
+			break;
+			case CONSOLE_STATE_BEGIN_CLASS:
+				state = CONSOLE_STATE_CLASS;
+				onec_string_put(*target_class, '\\');
+				onec_string_put(*target_class, toupper(input));
+			break;
+			case CONSOLE_STATE_BEGIN_METHOD:
+				state = CONSOLE_STATE_METHOD;
+				onec_string_append(*target_class, 1, "\\");
+				onec_string_put(*target_class, toupper(input));
+			break;
+			case CONSOLE_STATE_CLASS: // make
+				switch( input )
+				{
+					case TOKEN_SYMBOL_SLASH:
+					case TOKEN_SYMBOL_COLON:
+						state = CONSOLE_STATE_INIT;
+						index -= 1;
+					break;
+					case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
+					case TOKEN_ALPHA_UPPER_START ... TOKEN_ALPHA_UPPER_END:
+					case TOKEN_DIGIT_START ... TOKEN_DIGIT_END:
+					case TOKEN_SYMBOL_UNDERSCORE:
+						onec_string_put(*target_class, input);
+					break;
+					default:
+						goto parse_error;
+					break;
+				}
+			break;
+			case CONSOLE_STATE_METHOD: // route
+				switch( input )
+				{
+					case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
+					case TOKEN_ALPHA_UPPER_START ... TOKEN_ALPHA_UPPER_END:
+					case TOKEN_DIGIT_START ... TOKEN_DIGIT_END:
+					case TOKEN_SYMBOL_UNDERSCORE:
+						onec_string_put(*target_class, input);
+					break;
+					default:
+						goto parse_error;
+					break;
+				}
+			break;
+		}
+	}
+
+	onec_string_append(*target_class, 1, "Action");
+
+	return 1;
+
+	parse_error:
+	return 0;
+}
+
 static HashTable* application_class_method_dispatcher( char* base_namespace, zval** input_argument, zval** action_resolver )
 {
 	/* move index 0 to 1 */
@@ -183,80 +277,78 @@ static HashTable* application_class_method_dispatcher( char* base_namespace, zva
 
 		zend_string* target_action_zs = zval_get_string(target_action);
 
-		char*  target_action_src = target_action_zs->val;
-		size_t target_action_len = target_action_zs->len;
+		int    parse_success;
+		int    second_parse = 0;
 		char   input;
 
-		onec_string* target_class;
-		onec_string_init(target_class);
+		onec_string *target_class, *target_method;
 
-		onec_string* target_method;
+		onec_string_init(target_class);
 		onec_string_init(target_method);
 
 		char* 	  	 target_class_src = NULL;
 		zend_object* target_class_init;
 
-		int parse_success =
-			console_class_method_parser(base_namespace, target_action_src, target_action_len, &target_class, &target_method);
+		__ext_second_parse:
+		if(! second_parse )
+			parse_success = console_class_method_parser(
+				base_namespace, target_action_zs,
+				&target_class, &target_method
+			);
+		else
+			parse_success = console_subns_class_method_parser(
+				base_namespace, target_action_zs, &target_class
+			);
 
 		if( !parse_success || !target_class->len )
-        	goto local_cleanup;
+    		goto local_cleanup;
 
 		target_class_src = onec_string_get(target_class);
 		target_class_init = php_class_init_ex(target_class_src);
 
 		if(! target_class_init )
-        	goto local_cleanup;
+		{
+			if( second_parse )
+				goto local_cleanup;
 
-		bool target_valid = false;
-		bool is_invokable = false;
+        	onec_string_reset(target_class);
+        	onec_string_reset(target_method);
+        	second_parse = 1;
+        	goto __ext_second_parse;
+		}
 
+		zval class_name, method_name;
 
 		ZEND_HASH_FOREACH_PTR(&target_class_init->ce->function_table, zend_function* value) 
         {
-            int is_public = (value->common.fn_flags & ZEND_ACC_PUBLIC);
-            int name_equalied = zend_string_equals_cstr(value->common.function_name, target_method->val, target_method->len);
+        	// Is method are public modifier
+           	if(! (value->common.fn_flags & ZEND_ACC_PUBLIC) )
+           		continue;
 
-            if( is_public && name_equalied )
-            {
-                target_valid = true;
-                break;
-            }   
-
-            if(! is_invokable )
-            {
-	           	name_equalied = zend_string_equals_cstr(value->common.function_name, "__invoke", sizeof("__invoke") - 1);
-
-	           	if( is_public && name_equalied )
-           		{
-	           		is_invokable = true;
-           		}
-            }
-        } ZEND_HASH_FOREACH_END(); 
-
-        if( !target_valid && !is_invokable )
-        	goto local_cleanup;
-
-		zval class_name;
-		ZVAL_STRINGL(&class_name, target_class->val, target_class->len);
-		zend_hash_str_update(dispatch, "class", sizeof("class") - 1, &class_name);
-
-		zval method_name;
-		do {
-			if( target_valid )
-			{
+        	if( !second_parse && 
+        		zend_string_equals_cstr(
+    			value->common.function_name, target_method->val, target_method->len
+        		)
+        	)
+        	{
 				ZVAL_STRINGL(&method_name, target_method->val, target_method->len);	
-				break;
-			}
-
-			if( is_invokable )
+				goto __ext_target_found;
+			} else
+			if( zend_string_equals_cstr(
+				value->common.function_name, "__invoke", sizeof("__invoke") - 1)
+			)
 			{
 				ZVAL_STRINGL(&method_name, "__invoke", sizeof("__invoke") - 1);	
-				break;
-			}
+				goto __ext_target_found;
+            }
 
-			goto local_cleanup;
-		} while(0);
+        } ZEND_HASH_FOREACH_END(); 
+
+    	goto local_cleanup;
+
+    	__ext_target_found:
+		ZVAL_STRINGL(&class_name, target_class->val, target_class->len);
+		zend_hash_str_update(dispatch, "class", sizeof("class") - 1, &class_name);
 		zend_hash_str_update(dispatch, "method", sizeof("method") - 1, &method_name);
 
 		if( target_class_src )
