@@ -1,5 +1,5 @@
 # Zpheur
-> ⚠️ Used only for non-production (non-stable release)
+> ⚠️ Used only for non-production (untested and non-stable release)
  
 Zpheur is a web framework for PHP written in C delivered as extension. It included router, middleware, dependency injection, dotenv loader and many more. Aim for minimalist project structure without bloat-installed Composer package.
 
