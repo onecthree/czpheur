@@ -3,6 +3,22 @@
 
 #include "regexp.h"
 
+
+static size_t _regexp_strlen( PCRE2_UCHAR* str )
+{
+    size_t length = 0;
+
+    for( ; *str != '\0'; (*str)++ )
+    {
+        if( length > MAX_SAFE_PCRE2_UCHAR_LENGTH )
+            return (size_t)(0);
+        
+        length++;
+    }
+
+    return length;
+}
+
 bool regexp_match(
     unsigned char* const    pattern_src,
     size_t                  pattern_size,
@@ -90,22 +106,7 @@ bool regexp_match_result(
     return false;
 }
 
-static inline size_t _regexp_strlen( PCRE2_UCHAR* str )
-{
-    size_t length = 0;
-
-    for( ; *str != '\0'; (*str)++ )
-    {
-        if( length > MAX_SAFE_PCRE2_UCHAR_LENGTH )
-            return (size_t)(0);
-        
-        length++;
-    }
-
-    return length;
-}
-
-char const* regexp_replace(
+char* regexp_replace(
     unsigned char* const    pattern_v,
     unsigned char* const    subject_v,
     unsigned char* const    replacement_v,
