@@ -11,8 +11,6 @@ extern zend_module_entry zpheur_module_entry;
 #define PHP_ZPHEUR_VERSION_NUMBER 	"0.2.010"
 #define PHP_ZPHEUR_VERSION_TAG		"alpha"
 
-char* tocalver( char* val, size_t len );
-
 /* For compatibility with older PHP versions */
 #ifndef ZEND_PARSE_PARAMETERS_NONE
 #define ZEND_PARSE_PARAMETERS_NONE() \
@@ -104,6 +102,7 @@ ZEND_MINIT_FUNCTION(Zpheur_Logs_StreamLog);
 ZEND_MINIT_FUNCTION(Zpheur_Logs_StreamLog_StreamHandler);
 ZEND_MINIT_FUNCTION(Zpheur_Logs_StreamLog_Level);
 
+// [propose]
 // ZEND_MINIT_FUNCTION(Zpheur_DataTransforms_Dotenv_env);
 
 #if defined(ZTS) && defined(COMPILE_DL_ZPHEUR)
