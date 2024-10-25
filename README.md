@@ -41,3 +41,5 @@ $ sudo ln -s /etc/php/8.x/mods-available/zpheur.ini /etc/php/8.x/cli/conf.d/22-z
 $ sudo ln -s /etc/php/8.x/mods-available/zpheur.ini /etc/php/8.x/fpm/conf.d/22-zpheur.ini
 ```
 If you use PHP-FPM, may do restart ```php8.x-fpm``` for load the extension.
+## Basic Usage
+For usage and documentation, see [Zpheur skeleton application](https://github.com/onecthree/zpheur) for more info.
