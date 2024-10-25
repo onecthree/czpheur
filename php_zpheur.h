@@ -8,7 +8,7 @@
 extern zend_module_entry zpheur_module_entry;
 #define phpext_zpheur_ptr &zpheur_module_entry
 
-#define PHP_ZPHEUR_VERSION_NUMBER 	"0.2.010"
+#define PHP_ZPHEUR_VERSION_NUMBER 	"0.2.017"
 #define PHP_ZPHEUR_VERSION_TAG		"alpha"
 
 /* For compatibility with older PHP versions */
@@ -16,6 +16,16 @@ extern zend_module_entry zpheur_module_entry;
 #define ZEND_PARSE_PARAMETERS_NONE() \
 	ZEND_PARSE_PARAMETERS_START(0, 0) \
 	ZEND_PARSE_PARAMETERS_END()
+#endif
+
+#define ZPHEUR_FUROUTER_INCLUDED 1
+#define ZPHEUR_VOILE_INCLUDED 	 0
+#define ZPHEUR_PHASE_INCLUDED 	 1
+#define ZPHEUR_DOTENV_INCLUDED 	 1
+
+#ifdef ZPHEUR_REQUIRE_VOILE
+#undef  ZPHEUR_VOILE_INCLUDED
+#define ZPHEUR_VOILE_INCLUDED 1
 #endif
 
 ZEND_BEGIN_MODULE_GLOBALS(zpheur)

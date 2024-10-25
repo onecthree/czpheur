@@ -174,20 +174,19 @@ PHP_RINIT_FUNCTION(zpheur)
 PHP_MINFO_FUNCTION(zpheur)
 {
     php_info_print_table_start();
-        php_printf("<tr class=\"v\"><td>");
-		php_printf("PHP web framework delivered as C extension.");
-		php_printf("</td></tr>");
+		php_info_print_table_header(3, "Web framework for PHP delivered as C extension");
     php_info_print_table_end();
     php_info_print_table_start();
 	    php_info_print_table_header(2, "Info", "Value");;
-        php_info_print_table_row(2, "Author", "team@zpheur.com");  
-        php_info_print_table_row(2, "Version", PHP_ZPHEUR_VERSION_NUMBER " (" PHP_ZPHEUR_VERSION_TAG ") ");    
+        php_info_print_table_row(2, "Author", "Sultan Ilham (onecthree@gmail.com)");  
+        php_info_print_table_row(2, "Version", "v" PHP_ZPHEUR_VERSION_NUMBER " (" PHP_ZPHEUR_VERSION_TAG ") ");    
     php_info_print_table_end();
     php_info_print_table_start();
-	    php_info_print_table_header(3, "Component Name", "Status", "Info");
-        php_info_print_table_row(3, "FuRouter", "in-built", "build 20231023");  
-        php_info_print_table_row(3, "Voile", "in-built", "build 20231023");    
-        php_info_print_table_row(3, "Phase", "in-built", "build 20231023");   
+	    php_info_print_table_header(2, "Component", "Status");
+        php_info_print_table_row(2, "FuRouter", ZPHEUR_FUROUTER_INCLUDED ? "enabled" : "disabled");  
+        php_info_print_table_row(2, "Voile", ZPHEUR_VOILE_INCLUDED ? "enabled" : "disabled");    
+        php_info_print_table_row(2, "Phase", ZPHEUR_PHASE_INCLUDED ? "enabled" : "disabled");    
+        php_info_print_table_row(2, "Dotenv", ZPHEUR_DOTENV_INCLUDED ? "enabled" : "disabled");   
     php_info_print_table_end();
 }
 /* }}} */
