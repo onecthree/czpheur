@@ -5,75 +5,53 @@
 #include "httpverb_arginfo.h"
 
 
-#define HTTPVERB_UKNOWN		0
-#define HTTPVERB_GET 		1
-#define HTTPVERB_POST 		2
-#define HTTPVERB_PUT		3
-#define HTTPVERB_PATCH  	4
-#define HTTPVERB_DELETE 	5
-#define HTTPVERB_OPTIONS	6
-
-uint8_t httpverb_tokenizing_verb( char *request_method, uint64_t request_method_len )
+static int httpverb_tokenizing_verb( char* request_method_src, int request_method_len )
 {
-	switch( request_method_len )
+	unsigned char c;
+	unsigned long method_t = 0;
+	for( int i = 0; i < request_method_len; i += 1 )
 	{
-		case 3:
-			if( strcmp(request_method, "GET") == 0 )
-			{
-				return HTTPVERB_GET;
-			}
+		c = request_method_src[i];
+		switch( c )
+		{
+			case 65 ... 90:
+				method_t *= 100;
+				method_t += c;
+			break;
+			default: goto end_break; break;
+		}
 
-			if( strcmp(request_method, "PUT") == 0 )
-			{
-				return HTTPVERB_PUT;
-			}
-		break;
-
-		case 4:
-			if( strcmp(request_method, "POST") == 0 )
-			{
-				return HTTPVERB_POST;
-			}
-		break;
-
-		case 5:
-			if( strcmp(request_method, "PATCH") == 0 )
-			{
-				return HTTPVERB_PATCH;
-			}
-		break;
-
-		case 6:
-			if( strcmp(request_method, "DELETE") == 0 )
-			{
-				return HTTPVERB_DELETE;
-			}
-		break;
-
-		case 7:
-			if( strcmp(request_method, "OPTIONS") == 0 )
-			{
-				return HTTPVERB_OPTIONS;
-			}
-		break;
+		if( method_t > HTTPTOKEN_OPTIONS )
+		{
+			end_break:
+			method_t = 0;
+			break;
+		}
 	}
 
-	return HTTPVERB_UKNOWN;
+	switch( method_t )
+	{
+		case HTTPTOKEN_GET: 	return HTTPVERB_GET; break;
+		case HTTPTOKEN_POST: 	return HTTPVERB_POST; break;
+		case HTTPTOKEN_PUT: 	return HTTPVERB_PUT; break;
+		case HTTPTOKEN_PATCH: 	return HTTPVERB_PATCH; break;
+		case HTTPTOKEN_DELETE: 	return HTTPVERB_DELETE; break;
+		case HTTPTOKEN_OPTIONS:	return HTTPVERB_OPTIONS; break;
+		default: return HTTPVERB_UKNOWN; break;
+	}
 }
 
 PHP_FUNCTION(httpverb)
 {
-	char *request_method = NULL;
-	size_t request_method_len = 0;
+	char*   request_method_src = NULL;
+	size_t  request_method_len = 0;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
-		Z_PARAM_STRING(request_method, request_method_len)
+		Z_PARAM_STRING(request_method_src, request_method_len)
 	ZEND_PARSE_PARAMETERS_END();
 
-	if( httpverb_tokenizing_verb(request_method, request_method_len) == HTTPVERB_UKNOWN )
-	{
+	if(! httpverb_tokenizing_verb(request_method_src, request_method_len) )
 		RETURN_BOOL(false);
-	}
 
-	RETURN_STRINGL(request_method, request_method_len);
+	RETURN_STRINGL(request_method_src, request_method_len);
 }
