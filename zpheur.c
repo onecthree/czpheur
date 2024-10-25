@@ -182,7 +182,7 @@ PHP_MINFO_FUNCTION(zpheur)
         php_info_print_table_row(2, "Version", "v" PHP_ZPHEUR_VERSION_NUMBER " (" PHP_ZPHEUR_VERSION_TAG ") ");    
     php_info_print_table_end();
     php_info_print_table_start();
-	    php_info_print_table_header(2, "Component", "Status");
+	    php_info_print_table_header(2, "Component", "Value");
         php_info_print_table_row(2, "FuRouter", ZPHEUR_FUROUTER_INCLUDED ? "enabled" : "disabled");  
         php_info_print_table_row(2, "Voile", ZPHEUR_VOILE_INCLUDED ? "enabled" : "disabled");    
         php_info_print_table_row(2, "Phase", ZPHEUR_PHASE_INCLUDED ? "enabled" : "disabled");    
