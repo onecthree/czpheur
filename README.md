@@ -6,16 +6,15 @@ Zpheur is a web framework for PHP written in C delivered as extension. It includ
 ## Installation
 > Extension development are in Ubuntu 20.04, for other GNU/Linux distro or platform OS are not tested
 
-The extension only support PHP version from 8.2.1 or greater, and required ```libpcre3``` ```openssl```. For installing the library (Ubuntu 20.04):
+The extension only support PHP version from 8.2.1 or greater, and required ```openssl``` ```libpcre3```. For installing the library (Ubuntu 20.04):
 ```bash
-$ sudo apt install libpcre3 -y
-$ sudo apt install openssl -y
+$ sudo apt install openssl libpcre3 -y
 ```
 The extension itself need other extension to running each feature (optional):
 ```bash
 # for Zpheur Voile (MongoDB ODM), you need MongoDB extension driver for PHP
 $ sudo apt install php8.2-mongodb -y
-... or php8.3-mongodb, php8.4-mongodb... depend on you PHP version
+... or php8.3-mongodb, php8.4-mongodb... depends on your PHP version
 ```
 Clone the repository:
 ```bash
