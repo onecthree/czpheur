@@ -4,6 +4,8 @@
 
 #include <php.h>
 #include <stdlib.h>
+#include <Zend/zend_modules.h>
+#include <Zend/zend_API.h>
 
 extern zend_module_entry zpheur_module_entry;
 #define phpext_zpheur_ptr &zpheur_module_entry
@@ -29,8 +31,9 @@ extern zend_module_entry zpheur_module_entry;
 #endif
 
 ZEND_BEGIN_MODULE_GLOBALS(zpheur)
-	zval     	DOTENV;
-	zval     	CSRF;
+	zval     		DOTENV;
+	zval     		CSRF;
+	zend_string*	ZpheurIniHandleEntryMain;
 ZEND_END_MODULE_GLOBALS(zpheur)
 
 ZEND_EXTERN_MODULE_GLOBALS(zpheur)
