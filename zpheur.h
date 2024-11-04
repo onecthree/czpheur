@@ -2,6 +2,7 @@
 #ifndef ZPHEUR_H
 #define ZPHEUR_H
 
+
 #define _PHP_ERROR_HANDLER 		1 << 0
 #define _ZCLI_ERROR_HANDLER 	1 << 1
 #define _ZWEB_ERROR_HANDLER 	1 << 2
