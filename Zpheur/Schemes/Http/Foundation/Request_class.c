@@ -28,7 +28,10 @@ PHP_METHOD(Request, __construct)
     ZEND_PARSE_PARAMETERS_END();
 
     /* {{{ REQUEST */
-    zend_object* input_object = php_class_init("Zpheur\\Schemes\\Http\\Foundation\\InputBag");
+    zend_object* input_object = php_class_init(
+        "Zpheur\\Schemes\\Http\\Foundation\\InputBag",
+        sizeof("Zpheur\\Schemes\\Http\\Foundation\\InputBag") - 1
+    );
     {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
         ZVAL_ZVAL(&params___construct[0], request, 1, 0);
@@ -42,7 +45,10 @@ PHP_METHOD(Request, __construct)
     /* }}} */   
 
     /* {{{ QUERY */
-    zend_object* query_object = php_class_init("Zpheur\\Schemes\\Http\\Foundation\\InputBag");
+    zend_object* query_object = php_class_init(
+        "Zpheur\\Schemes\\Http\\Foundation\\InputBag",
+        sizeof("Zpheur\\Schemes\\Http\\Foundation\\InputBag") - 1
+    );
     {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
         ZVAL_ZVAL(&params___construct[0], query, 1, 0);
@@ -56,7 +62,10 @@ PHP_METHOD(Request, __construct)
     /* }}} */
 
     /* {{{ COOKIES */
-    zend_object* cookies_object = php_class_init("Zpheur\\Schemes\\Http\\Foundation\\InputBag");
+    zend_object* cookies_object = php_class_init(
+        "Zpheur\\Schemes\\Http\\Foundation\\InputBag",
+        sizeof("Zpheur\\Schemes\\Http\\Foundation\\InputBag") - 1
+    );
     {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
         ZVAL_ZVAL(&params___construct[0], cookies, 1, 0);
@@ -70,7 +79,10 @@ PHP_METHOD(Request, __construct)
     /* }}} */
 
     /* {{{ ATTRIBUTES */
-    zend_object* attributes_object = php_class_init("Zpheur\\Schemes\\Http\\Foundation\\ParameterBag");
+    zend_object* attributes_object = php_class_init(
+        "Zpheur\\Schemes\\Http\\Foundation\\ParameterBag",
+        sizeof("Zpheur\\Schemes\\Http\\Foundation\\ParameterBag") - 1
+    );
     {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
         ZVAL_ZVAL(&params___construct[0], attributes, 1, 0);
@@ -87,7 +99,10 @@ PHP_METHOD(Request, __construct)
 
 
     /* {{{ HEADERS */
-    zend_object* header_object = php_class_init("Zpheur\\Schemes\\Http\\Foundation\\HeaderBag");
+    zend_object* header_object = php_class_init(
+        "Zpheur\\Schemes\\Http\\Foundation\\HeaderBag",
+        sizeof("Zpheur\\Schemes\\Http\\Foundation\\HeaderBag") - 1
+    );
     {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
         ZVAL_ZVAL(&params___construct[0], server, 1, 0);
@@ -102,7 +117,10 @@ PHP_METHOD(Request, __construct)
 
 
     /* {{{ SERVER */
-    zend_object* server_object = php_class_init("Zpheur\\Schemes\\Http\\Foundation\\ServerBag");
+    zend_object* server_object = php_class_init(
+        "Zpheur\\Schemes\\Http\\Foundation\\ServerBag",
+        sizeof("Zpheur\\Schemes\\Http\\Foundation\\ServerBag") - 1
+    );
     {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
         ZVAL_ZVAL(&params___construct[0], server, 1, 0);
@@ -170,7 +188,7 @@ PHP_METHOD(Request, parseHeader)
     Z_PARAM_ZVAL(global_server)
     ZEND_PARSE_PARAMETERS_END();
 
-    zend_object *retval_obj = php_class_init("stdClass");
+    zend_object *retval_obj = php_class_init("stdClass", sizeof("stdClass") - 1);
 
     ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(global_server), zend_string* index, zval* value )
     {

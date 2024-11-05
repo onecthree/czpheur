@@ -79,7 +79,7 @@ PHP_METHOD(HttpKernel, handle)
 		zval* 			middleware_props = zend_hash_index_find(Z_ARR_P(middleware), 1);
 
 		zend_string* 	middleware_class_name = zval_get_string(middleware_cname);
-		zend_object* 	middleware_class = php_class_init(middleware_class_name->val);
+		zend_object* 	middleware_class = php_class_init(middleware_class_name->val, middleware_class_name->len);
 
 		/* Set property value {{{ */
 		ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(middleware_props), zend_string* prop_name, zval* prop_value)
@@ -210,7 +210,9 @@ PHP_METHOD(HttpKernel, handle)
 
 	zval*   		action_class 	= zend_hash_str_find(Z_ARR_P(dispatched_bind), "class", sizeof("class") - 1);
 	zval*   		action_method 	= zend_hash_str_find(Z_ARR_P(dispatched_bind), "method", sizeof("method") - 1);
-	zend_object*	class_action 	= php_class_init(Z_STRVAL_P(action_class));
+
+	zend_string* 	_action_class 	= zval_get_string(action_class);
+	zend_object*	class_action 	= php_class_init(_action_class->val, _action_class->len);
 
 	/* Call action constructor */
 	{
@@ -307,7 +309,7 @@ PHP_METHOD(HttpKernel, terminate)
 	// zval*	response = zend_target_read_property_ex(error_exception, "response");
 
 	zval* 			argument_resolver = zend_this_read_property("argument_resolver");
-	zend_object*	class_action = php_class_init(class_name_src);
+	zend_object*	class_action = php_class_init(class_name_src, class_name_len);
 	zval* 			return_action;
 
 	/* Call action constructor */

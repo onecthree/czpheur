@@ -33,19 +33,20 @@ typedef struct
 
 PHP_METHOD(PhaseModel, __construct)
 {
-    char *model_ns = NULL;
-    size_t model_ns_len = 0;
+    char*       model_classname_src = NULL;
+    size_t      model_classname_len = 0;
 
     ZEND_PARSE_PARAMETERS_START(0, 1)
         Z_PARAM_OPTIONAL
-        Z_PARAM_STRING(model_ns, model_ns_len)
+        Z_PARAM_STRING(model_classname_src, model_classname_len)
     ZEND_PARSE_PARAMETERS_END();
 
-    if( !model_ns_len ) // is zero
+    if( !model_classname_len ) // is zero
     {
         // Fetch class name contexts
-        zend_class_entry *class_model_scope = zend_get_called_scope(execute_data);
-        model_ns = class_model_scope->name->val;
+        zend_class_entry* class_model_scope = zend_get_called_scope(execute_data);
+        model_classname_src = class_model_scope->name->val;
+        model_classname_len = class_model_scope->name->len;
     }
 
     int skip = 0;
@@ -63,12 +64,12 @@ PHP_METHOD(PhaseModel, __construct)
 
     phase *phase_info = emalloc(sizeof(phase));
 
-    zend_object *o_model_ns_class = php_class_init(model_ns);
+    zend_object *o_model_ns_class = php_class_init(model_classname_src, model_classname_len);
     HashTable *ht_cm_attributes = o_model_ns_class->ce->attributes;
 
-    zval zv_model_ns;
-    ZVAL_STRING(&zv_model_ns, model_ns);
-    phase_info->model_ns = zv_model_ns;
+    zval _model_classname;
+    ZVAL_STRINGL(&_model_classname, model_classname_src, model_classname_len);
+    phase_info->model_ns = _model_classname;
 
     // fetch attribute class model
     zval *z_attribute = o_model_ns_class->ce->attributes->arPacked;
@@ -120,7 +121,7 @@ PHP_METHOD(PhaseModel, __construct)
             "database_set_conn", sizeof("database_set_conn") - 1, false, NULL);
 
     // Declare new PDO class to check connection info was valid
-    zend_object *z_pdo = php_class_init("PDO");
+    zend_object *z_pdo = php_class_init("PDO", sizeof("PDO") - 1);
     zval *z_params_pdo = safe_emalloc(3, sizeof(zval), 0);
 
     int conn_info_len = snprintf(NULL, 0, "mysql:host=%s;port=%ld;dbname=%s", 
@@ -157,7 +158,7 @@ PHP_METHOD(PhaseModel, migration)
 
     zend_class_entry *model_ns = zend_get_called_scope(execute_data);
 
-    zend_object *PhaseModel_scope = php_class_init("Zpheur\\Databases\\Phase\\Model");
+    zend_object *PhaseModel_scope = php_class_init("Zpheur\\Databases\\Phase\\Model", sizeof("Zpheur\\Databases\\Phase\\Model") - 1);
 
     zval *PhaseModel___construct_params = safe_emalloc(1, sizeof(zval), 0);
     ZVAL_STRING(&PhaseModel___construct_params[0], ZSTR_VAL(model_ns->name));

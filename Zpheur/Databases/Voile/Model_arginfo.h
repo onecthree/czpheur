@@ -2,12 +2,13 @@
 #ifndef H_ZPHEUR_DATABASES_VOILE_MODEL
 #define H_ZPHEUR_DATABASES_VOILE_MODEL
 
-#include "ext/standard/info.h"
-#include "ext/standard/php_standard.h"
+#include <php.h>
+#include <ext/standard/info.h>
+#include <ext/standard/php_standard.h>
 
-#include "zend_API.h"
-#include "zend_interfaces.h"
-#include "zend_exceptions.h"
+#include <zend_API.h>
+#include <zend_interfaces.h>
+#include <zend_exceptions.h>
 
 
 #define ATTR_NAMED_PARAM__DEFAULT   111229896
@@ -81,12 +82,12 @@ typedef struct
 
 typedef struct
 {
-    zval return_object;
-    zval typelist_field;
-    zval typepair_field;
-    zval attribute_field;
-    char *model_classname;
-    zval _voile;
+    zval                    return_object;
+    zval                    typelist_field;
+    zval                    typepair_field;
+    zval                    attribute_field;
+    zend_string*            model_classname;
+    zval                    _voile;
 } voile_data_puser;
 
 // zend_class_entry* zpheur_databases_voile_model_class_entry;

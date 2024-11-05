@@ -40,7 +40,7 @@ PHP_METHOD(Voile, __construct)
     /* Test connection check */
     /* Check if connection was accessible */
     zend_object *zo_manager =
-            php_class_init("MongoDB\\Driver\\Manager");
+            php_class_init("MongoDB\\Driver\\Manager", sizeof("MongoDB\\Driver\\Manager") - 1);
     php_class_call_method(zo_manager, "__construct", sizeof("__construct") - 1, 1, db_uri, false);
 
     zval *zv_param_command = safe_emalloc(1, sizeof(zval), 0);
@@ -53,7 +53,7 @@ PHP_METHOD(Voile, __construct)
     zend_hash_str_update(ht_param, "ping", sizeof("ping") - 1, &_ping);
     ZVAL_ARR(&zv_param_command[0], ht_param);
 
-    zend_object *z_command = php_class_init("MongoDB\\Driver\\Command");
+    zend_object *z_command = php_class_init("MongoDB\\Driver\\Command", sizeof("MongoDB\\Driver\\Command") - 1);
     php_class_call_method(z_command, "__construct", sizeof("__construct") - 1, 1, zv_param_command,false);
 
     zval *zv_param_exec_command = safe_emalloc(2, sizeof(zval), 0);

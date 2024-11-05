@@ -140,7 +140,8 @@ PHP_METHOD(Route, middleware)
 
         /* Check if method exists */
 
-        zend_object* middleware_class_init = php_class_init(Z_STRVAL_P(middleware_classname));
+        zend_string* _middleware_classname = zval_get_string(middleware_classname);
+        zend_object* middleware_class_init = php_class_init(_middleware_classname->val, _middleware_classname->len);
 
         ZEND_HASH_FOREACH_PTR(&middleware_class_init->ce->function_table, zend_function* target_function) 
         {
@@ -301,7 +302,7 @@ PHP_METHOD(Route, add)
         target_class_src = target_class_zs->val;
         target_class_len = target_class_zs->len;
 
-        target_class_init = php_class_init(target_class_src);
+        target_class_init = php_class_init(target_class_src, target_class_len);
 
         if(! (target_method = zend_hash_index_find(Z_ARR_P(action), 1)) )
             php_error_docref(NULL, E_ERROR, "02 argument are undefined");
@@ -319,7 +320,7 @@ PHP_METHOD(Route, add)
         if( Z_TYPE_P(action) != IS_STRING )
             php_error_docref(NULL, E_ERROR, "01 argument must be string");    
 
-        target_class_init = php_class_init(target_class_src);
+        target_class_init = php_class_init(target_class_src, target_class_len);
 
         zend_string* target_class_zs = zval_get_string(target_class);
         target_class_src = target_class_zs->val;

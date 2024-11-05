@@ -17,7 +17,7 @@ static zend_object* voile_model_constructor_init( zend_class_entry* target_model
 {
     char*        model_classname_src = target_model_ce->name->val;
     size_t       model_classname_len = target_model_ce->name->len;
-    zend_object* model_class = php_class_init(model_classname_src);
+    zend_object* model_class = php_class_init(model_classname_src, model_classname_len);
 
     return model_class;
 }
@@ -480,7 +480,7 @@ PHP_METHOD(Model, __construct)
     voile_ptr->get_called          = false;
     voile_ptr->filtered            = false;
 
-    zend_object *manager_class = php_class_init("MongoDB\\Driver\\Manager");
+    zend_object *manager_class = php_class_init("MongoDB\\Driver\\Manager", sizeof("MongoDB\\Driver\\Manager") - 1);
 
     zval *params___construct = safe_emalloc(1, sizeof(zval), 0);
     ZVAL_ZVAL(&params___construct[0], &voile_ptr->db_uri, 1, 0);
@@ -570,7 +570,7 @@ void _set_internal( char* name_src, size_t name_len, zval* zv_value, zval* scope
             {
                 case IS_STRING:
                 {
-                    zend_object* objectid = php_class_init("MongoDB\\BSON\\ObjectId");
+                    zend_object* objectid = php_class_init("MongoDB\\BSON\\ObjectId", sizeof("MongoDB\\BSON\\ObjectId") - 1);
 
                     zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
                     ZVAL_ZVAL(&params___construct[0], zv_value, 1, 0);
@@ -612,7 +612,7 @@ void _set_internal( char* name_src, size_t name_len, zval* zv_value, zval* scope
                     // check if ojid
                     if( zend_string_equals_cstr(Z_OBJ_P(zv_value)->ce->name, "DateTime", sizeof("DateTime") - 1) )
                     {
-                        zend_object* utcdatetime = php_class_init("MongoDB\\BSON\\UTCDateTime");
+                        zend_object* utcdatetime = php_class_init("MongoDB\\BSON\\UTCDateTime", sizeof("MongoDB\\BSON\\UTCDateTime") - 1);
 
                         zval *params___construct = safe_emalloc(1, sizeof(zval), 0);
                         ZVAL_ZVAL(&params___construct[0], zv_value, 1, 0);
@@ -646,7 +646,7 @@ void _set_internal( char* name_src, size_t name_len, zval* zv_value, zval* scope
                 case IS_DOUBLE:
                 case IS_LONG:
                 {
-                    zend_object* decimal128 = php_class_init("MongoDB\\BSON\\Decimal128");
+                    zend_object* decimal128 = php_class_init("MongoDB\\BSON\\Decimal128", sizeof("MongoDB\\BSON\\Decimal128") - 1);
 
                     zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
                     ZVAL_ZVAL(&params___construct[0], zv_value, 1, 0);
@@ -757,7 +757,7 @@ PHP_METHOD(Model, delete)
     zval*       collection   = &voile_ptr->collection;
     HashTable*  option       = &voile_ptr->option;
 
-    zend_object *bulk_write = php_class_init("MongoDB\\Driver\\BulkWrite");
+    zend_object *bulk_write = php_class_init("MongoDB\\Driver\\BulkWrite", sizeof("MongoDB\\Driver\\BulkWrite") - 1);
 
     php_class_call_constructor(bulk_write, 0, NULL);
 
@@ -844,7 +844,7 @@ PHP_METHOD(Model, save)
     HashTable*  update_doc          = &voile_ptr->update_doc;
     HashTable*  unset_doc           = &voile_ptr->unset_doc;
 
-    zend_object *bulk_write = php_class_init("MongoDB\\Driver\\BulkWrite");
+    zend_object *bulk_write = php_class_init("MongoDB\\Driver\\BulkWrite", sizeof("MongoDB\\Driver\\BulkWrite") - 1);
     php_class_call_constructor(bulk_write, 0, NULL);
 
     // HashTable* update_doc;
@@ -1081,7 +1081,7 @@ PHP_METHOD(Model, find)
 
     zend_class_entry*   model_classname = zend_get_called_scope(execute_data);
     zend_string*        model_classname_zs = model_classname->name;
-    zend_object*        model = php_class_init(ZSTR_VAL(model_classname_zs));
+    zend_object*        model = php_class_init(model_classname_zs->val, model_classname_zs->len);
 
     HashTable *array;
     ALLOC_HASHTABLE(array);
@@ -1092,7 +1092,7 @@ PHP_METHOD(Model, find)
     {
         case IS_STRING:
         {
-            zend_object* object_id = php_class_init("MongoDB\\BSON\\ObjectId");
+            zend_object* object_id = php_class_init("MongoDB\\BSON\\ObjectId", sizeof("MongoDB\\BSON\\ObjectId") - 1);
 
             zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
             ZVAL_ZVAL(&params___construct[0], filter, 0, 0);
@@ -1146,7 +1146,7 @@ PHP_METHOD(Model, it)
 
     zend_class_entry*   model_classname = zend_get_called_scope(execute_data);
     zend_string*        model_classname_zs = model_classname->name;
-    zend_object*        model = php_class_init(ZSTR_VAL(model_classname_zs));
+    zend_object*        model = php_class_init(model_classname_zs->val, model_classname_zs->len);
 
     /* Call constructor */
     php_class_call_constructor(model, 0, NULL);
@@ -1243,7 +1243,7 @@ PHP_METHOD(Model, sum)
         RETURN_ZVAL(obj, 1, 0);
     }
 
-    zend_object* zero_adecimal128 = php_class_init("MongoDB\\BSON\\Decimal128");
+    zend_object* zero_adecimal128 = php_class_init("MongoDB\\BSON\\Decimal128", sizeof("MongoDB\\BSON\\Decimal128") - 1);
 
     zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
     ZVAL_STRINGL(&params___construct[0], "0", sizeof("0") - 1);
@@ -1259,7 +1259,7 @@ PHP_METHOD(Model, all)
 
     zend_class_entry*   model_classname = zend_get_called_scope(execute_data);
     zend_string*        model_classname_zs = model_classname->name;
-    zend_object*        model = php_class_init(ZSTR_VAL(model_classname_zs));
+    zend_object*        model = php_class_init(model_classname_zs->val, model_classname_zs->len);
 
     /* Call constructor */
     php_class_call_constructor(model, 0, NULL);
@@ -1424,7 +1424,7 @@ PHP_METHOD(Model, get)
     zend_hash_update(array_command, zend_string_init("pipeline", sizeof("pipeline") - 1, 0), &pipeline);
     zend_hash_update(array_command, zend_string_init("cursor", sizeof("cursor") - 1, 0), &empty_obj);
 
-    zend_object *command = php_class_init("MongoDB\\Driver\\Command");
+    zend_object *command = php_class_init("MongoDB\\Driver\\Command", sizeof("MongoDB\\Driver\\Command") - 1);
 
     zval *params___construct = safe_emalloc(1, sizeof(zval), 0);
     ZVAL_ARR(&params___construct[0], array_command);
@@ -1468,7 +1468,7 @@ PHP_METHOD(Model, get)
         voile_data_puser* data_puser    = emalloc(sizeof(voile_data_puser));
 
         data_puser->return_object       = container_result;
-        data_puser->model_classname     = Z_STRVAL_P(model_classname);
+        data_puser->model_classname     = zval_get_string(model_classname);
         data_puser->typelist_field      = model_info->typelist_field;
         data_puser->typepair_field      = model_info->typepair_field;
         data_puser->attribute_field     = model_info->attribute_field;
@@ -1477,7 +1477,7 @@ PHP_METHOD(Model, get)
         zval target_data_puser;
         ZVAL_PTR(&target_data_puser, (void*)data_puser);
 
-        zend_object *collection = php_class_init("Zpheur\\Databases\\Voile\\Collection");
+        zend_object *collection = php_class_init("Zpheur\\Databases\\Voile\\Collection", sizeof("Zpheur\\Databases\\Voile\\Collection") - 1);
 
         zval *params___construct = safe_emalloc(3, sizeof(zval), 0);
 
@@ -1506,7 +1506,7 @@ PHP_METHOD(Model, create)
     
     zend_class_entry*   model_classname = zend_get_called_scope(execute_data);
     zend_string*        model_classname_zs = model_classname->name;
-    zend_object*        model = php_class_init(ZSTR_VAL(model_classname_zs));
+    zend_object*        model = php_class_init(model_classname_zs->val, model_classname_zs->len);
 
     /* Prepare params for constructor */
     zval *params___construct = safe_emalloc(1, sizeof(zval), 0);
@@ -1551,7 +1551,7 @@ PHP_METHOD(Model, create)
 
 PHP_METHOD(Model, limit)
 {
-    zend_ulong limit;
+    zend_long limit = 1;
 
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_LONG(limit)

@@ -13,7 +13,7 @@
 #include "Collection_arginfo.h"
 
 
-static int voile_cursor_to_collection_apply(zend_object_iterator* iter, void* puser, bool once )
+static int voile_cursor_to_collection_apply( zend_object_iterator* iter, void* puser, bool once )
 {
     zval* data;
 
@@ -26,15 +26,18 @@ static int voile_cursor_to_collection_apply(zend_object_iterator* iter, void* pu
 
     data = iter->funcs->get_current_data(iter);
 
-    if (EG(exception)) {
+    if( EG(exception) )
         return ZEND_HASH_APPLY_STOP;
-    }
-    if (Z_ISUNDEF_P(data)) {
+
+    if( Z_ISUNDEF_P(data) )
         return ZEND_HASH_APPLY_STOP;
-    }
+
     Z_TRY_ADDREF_P(data);
 
-    zend_object* collection = php_class_init(ptr_data_puser->model_classname);
+    // UNSAFE: TODO: need fix asap
+    zend_object* collection =
+        php_class_init(ptr_data_puser->model_classname->val, ptr_data_puser->model_classname->len);
+
     // PoC for name change at runtime
     // zend_string* new_class_name = zend_string_init("InternSession", sizeof("InternSession") - 1, 0);
     // collection->ce->name = new_class_name;
@@ -77,11 +80,10 @@ static int voile_cursor_to_collection_apply(zend_object_iterator* iter, void* pu
 
                     zend_string* zs_typelist = zval_get_string(typelist);
 
-                    if(
-                        regexp_match_result(
-                            "(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)", 
+                    if( regexp_match_result(
+                            (unsigned char*)"(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)", 
                             sizeof("(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)") - 1,
-                            zs_typelist->val,
+                            (unsigned char*)zs_typelist->val,
                             zs_typelist->len,
                             &enum_name) == true )
                     {
@@ -95,22 +97,21 @@ static int voile_cursor_to_collection_apply(zend_object_iterator* iter, void* pu
                         zval* params_from = safe_emalloc(1, sizeof(zval), 0);
                         ZVAL_STRING(&params_from[0], Z_STRVAL_P(value));
 
-                        value = php_call_enum_method(enum_ce, "from", 1, params_from);
+                        value = php_call_enum_method(enum_ce, "from", sizeof("from") - 1, 1, params_from);
                     }
                 }
                 break;
                 case 2: // ANumber
                 {
-                    zval *typelist = zend_hash_find_ind(Z_ARR_P(typelist_field), name);
+                    zval* typelist = zend_hash_find_ind(Z_ARR_P(typelist_field), name);
                     char* enum_name = NULL;
 
                     zend_string* zs_typelist = zval_get_string(typelist);
 
-                    if( 
-                        regexp_match_result(
-                            "(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)", 
+                    if( regexp_match_result(
+                            (unsigned char*)"(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)", 
                             sizeof("(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)") - 1,
-                            zs_typelist->val,
+                            (unsigned char*)zs_typelist->val,
                             zs_typelist->len,
                             &enum_name) == true )
                     {
@@ -124,7 +125,7 @@ static int voile_cursor_to_collection_apply(zend_object_iterator* iter, void* pu
                         zval* params_from = safe_emalloc(1, sizeof(zval), 0);
                         ZVAL_LONG(&params_from[0], zval_get_long(value));
 
-                        value = php_call_enum_method(enum_ce, "from", 1, params_from);
+                        value = php_call_enum_method(enum_ce, "from", sizeof("from") - 1, 1, params_from);
                     }
                 }
                 break;  
@@ -150,8 +151,8 @@ static int voile_cursor_to_collection_apply(zend_object_iterator* iter, void* pu
         else // bila index collection dari user model tidak ada
         {
             // Set default value to undefined field from MongoDB result
-            zval*   property_field        = zend_hash_str_find(Z_ARR_P(attribute_field), name->val, name->len);
-            zval*   attr_default_value    = zend_hash_str_find(Z_ARR_P(property_field), "default", sizeof("default") - 1);
+            zval* property_field     = zend_hash_str_find(Z_ARR_P(attribute_field), name->val, name->len);
+            zval* attr_default_value = zend_hash_str_find(Z_ARR_P(property_field), "default", sizeof("default") - 1);
 
             zend_update_property(collection->ce, collection, name->val, name->len, attr_default_value);
         }
@@ -161,21 +162,17 @@ static int voile_cursor_to_collection_apply(zend_object_iterator* iter, void* pu
     ZVAL_OBJ(&target_collection, collection);
 
     if( once )
-    {
         add_next_index_zval(return_value, &target_collection);
-    }
     else
-    {
         ZVAL_ZVAL(return_value, &target_collection, 1, 0);
-    }
 
     return ZEND_HASH_APPLY_KEEP;
 }
 
-zend_result c_spl_iterator_apply(zval *obj, c_spl_iterator_apply_func_t apply_func, void *puser)
+zend_result c_spl_iterator_apply(zval* obj, c_spl_iterator_apply_func_t apply_func, void* puser)
 {
-    zend_object_iterator   *iter;
-    zend_class_entry       *ce = Z_OBJCE_P(obj);
+    zend_object_iterator*   iter;
+    zend_class_entry*       ce = Z_OBJCE_P(obj);
 
     iter = ce->get_iterator(ce, obj, 0);
 
@@ -524,7 +521,7 @@ PHP_METHOD(Collection, __get)
         zval*   all     = zend_this_read_property("all");
         zval*   model   = zend_hash_index_find(Z_ARR_P(all), 0);
 
-        zval *params___get = safe_emalloc(1, sizeof(zval), 0);
+        zval* params___get = safe_emalloc(1, sizeof(zval), 0);
         ZVAL_STRINGL(&params___get[0], field_src, field_len);
 
         zval* field = php_class_call_method(Z_OBJ_P(model), "__get", sizeof("__get") - 1, 1, params___get, false);     

@@ -1,7 +1,6 @@
 
-#ifndef ZPHEUR_H
-#define ZPHEUR_H
-
+#ifndef H_INCLUDE_ZPHEUR
+#define H_INCLUDE_ZPHEUR
 
 #define _PHP_ERROR_HANDLER 		1 << 0
 #define _ZCLI_ERROR_HANDLER 	1 << 1
@@ -161,6 +160,7 @@
 		zend_hash_del_bucket(Z_ARRVAL_P(stack), p); \
 	} \
 	zend_hash_internal_pointer_reset(Z_ARRVAL_P(stack));  \
+
 
 
 #endif

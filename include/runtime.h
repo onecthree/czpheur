@@ -33,9 +33,10 @@
 
 
 zval* php_call_enum_method(
-    zend_class_entry*   enum_ce,
-    char* const         function_name,
-    unsigned int        param_counts,
+    zend_class_entry*   ce,
+    char* const         function_name_src,
+    size_t              function_name_len,
+    zend_long           param_counts,
     zval*               params
 );
 
@@ -56,9 +57,9 @@ void php_execute_file(
 );
 
 zval* php_call_closure(
-    zval*               z_closure,
-    zend_object*        o_closure,
-    unsigned int        param_counts,
+    zval*               callable_func,
+    zend_object*        callable_obj,
+    size_t              param_counts,
     zval*               params
 );
 
@@ -72,9 +73,9 @@ zend_class_entry* php_enum_init(
 
 void php_call_static_method(
     zend_object*        obj,
-    char* const         method_name, 
-    size_t              method_name_length, 
-    int                 num_params, 
+    char* const         method_src, 
+    size_t              method_len, 
+    zend_long           param_counts, 
     zval*               params,
     zval*               retval
 );
@@ -88,12 +89,13 @@ zend_object* php_class_init_ex(
 );
 
 zend_object* php_class_init(
-    char* const         class_name
+    char* const         class_name_src,
+    size_t              class_name_len
 );
 
 void php_class_call_constructor(
     zend_object*        zend_object_class, 
-    unsigned int        param_counts, 
+    zend_long           param_counts, 
     zval*               params
 );
 
@@ -101,7 +103,7 @@ zval* php_class_call_method(
     zend_object*        zend_object_class, 
     char* const         method_src,
     size_t              method_len,
-    unsigned int        param_counts, 
+    zend_long           param_counts, 
     zval*               params, 
     bool                silent
 );

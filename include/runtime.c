@@ -46,61 +46,62 @@
 #include <Zend/zend_exceptions.h>
 
 
-zval* php_call_enum_method(
-    zend_class_entry*   enum_ce,
-    char* const         function_name,
-    unsigned int        param_counts,
-    zval*               params
-)
+zval* php_call_enum_method( zend_class_entry* ce, char* const function_name_src, size_t function_name_len, zend_long param_counts, zval* params )
 {
-    zval fun_str;
-    ZVAL_STRING(&fun_str, function_name);
+    zval function_name;
+    ZVAL_STRINGL(&function_name, function_name_src, function_name_len);
     zend_fcall_info fci;
     zend_fcall_info_cache fci_cache;
 
-    zend_string* function_name_str = zend_string_init(function_name, strlen(function_name), 0);
-    zend_function* func = zend_hash_find_ptr(&enum_ce->function_table, function_name_str);
+    zend_string* func_name = zend_string_init(function_name_src, function_name_len, 0);
+    zend_function* func = zend_hash_find_ptr(&ce->function_table, func_name);
 
-    if (func == NULL) {
-        zend_string_release(function_name_str);
-        return NULL; // Function not found
+    if( func == NULL ) // Function not found
+    {
+        zend_string_release(func_name);
+        return NULL;
     }
 
-    zval *retval = emalloc(sizeof(zval));
+    zval* retval = (zval*)emalloc(sizeof(zval));
+
+    /* {{ */
+    // fci.size = sizeof(fci);
+    // fci.function_name = function_name;
+    // fci.retval = retval;
+    // fci.params = params;
+    // fci.object = NULL;
+    // fci.param_count = param_counts;
+    // fci.named_params = named_params;
+    /*  }} */
 
     fci.size = sizeof(fci);
-    fci.function_name = fun_str;
-    fci.retval = &*retval;
-    fci.param_count = param_counts;
+    fci.function_name = function_name;
+    fci.retval = retval;
     fci.params = params;
     fci.object = NULL;
-    // fci.no_separation = 0;
+    fci.param_count = param_counts;
     fci.named_params = NULL;
 
-    // fci_cache.initialized = 1;
+    // REMOVE: uncompleted init scope, see next
+    // fci_cache.called_scope = NULL;
+    // fci_cache.calling_scope = NULL;
+    // fci_cache.function_handler = func;
+
     fci_cache.called_scope = NULL;
     fci_cache.calling_scope = NULL;
+    fci_cache.object = NULL;
     fci_cache.function_handler = func;
-
-    // zend_call_function(&fci, &fci_cache);
 
     if ( zend_call_function(&fci, &fci_cache) == SUCCESS )
     {
-        zend_string_release(function_name_str);
+        zend_string_release(func_name);
         return retval;
     }
 
-    return NULL; // Error calling the function
+    return NULL;
 }
 
-zend_result php_call_function(
-    char* const function_name_src, 
-    size_t function_name_len,
-    zend_long param_counts,
-    HashTable* named_params,
-    zval* params,
-    zval* retval
-)
+zend_result php_call_function( char* const function_name_src, size_t function_name_len, zend_long param_counts, HashTable* named_params, zval* params, zval* retval )
 {
     zend_fcall_info fci;
     zend_fcall_info_cache fcc;
@@ -234,29 +235,28 @@ void php_execute_file( char* const filepath, int flag_mode, zend_op_array* t_op_
     zend_string_release(file_path);
 }
 
-zval* php_call_closure( zval *z_closure, zend_object *o_closure, unsigned int param_counts, zval *params )
+zval* php_call_closure( zval* callable_func, zend_object* callable_obj, size_t param_counts, zval* params )
 {
     zend_fcall_info fci;
     zend_fcall_info_cache fci_cache;
-    zval *retval = emalloc(sizeof(zval));
+    zval* retval = (zval*)emalloc(sizeof(zval));
 
-    fci.function_name = *z_closure;
-    fci.param_count = param_counts;
-    fci.params = params;
-    fci.retval = &(*retval);
     fci.size = sizeof(fci);
-    fci.object = o_closure;
+    fci.function_name = *callable_func;
+    fci.retval = retval;
+    fci.params = params;
+    fci.object = callable_obj;
+    fci.param_count = param_counts;
     fci.named_params = NULL;
 
-    fci_cache.function_handler = NULL;
     fci_cache.called_scope = NULL;
     fci_cache.calling_scope = NULL;
     fci_cache.object = NULL;
+    fci_cache.function_handler = NULL;
 
     if( zend_call_function(&fci, &fci_cache) == SUCCESS )
-    {
         return retval;
-    }
+
     return NULL;
 }
 
@@ -266,7 +266,7 @@ zend_class_entry* php_class_exists( zend_string* class_name )
     return zend_lookup_class(class_name);
 }
 
-zend_class_entry *php_enum_init( char* const class_name )
+zend_class_entry* php_enum_init( char* const class_name )
 {
     zend_class_entry *ce;
     zend_string *zstr_class_name;
@@ -289,18 +289,18 @@ zend_class_entry *php_enum_init( char* const class_name )
     return ce;
 }
 
-void php_call_static_method( zend_object* obj, char* const method_name, size_t method_name_length, int num_params, zval* params, zval* retval )
+void php_call_static_method( zend_object* object, char* const method_src, size_t method_len, zend_long param_counts, zval* params, zval* retval )
 {
     zval function_name;
-    ZVAL_STRINGL(&function_name, method_name, method_name_length);
+    ZVAL_STRINGL(&function_name, method_src, method_len);
 
-    zval zv_obj;
-    ZVAL_OBJ(&zv_obj, obj);
+    zval _object;
+    ZVAL_OBJ(&_object, object);
 
-    call_user_function(NULL, &zv_obj, &function_name, retval, num_params, params);
-    // zend_call_known_function(NULL, obj, obj->ce, retval, num_params, params, NULL);
+    call_user_function(NULL, &_object, &function_name, retval, param_counts, params);
 
-    // zval_ptr_dtor(&obj);
+    // Do need to free'd
+    // zval_ptr_dtor(&object);
     // zval_ptr_dtor(&function_name);
 }
 
@@ -350,37 +350,31 @@ zend_object *php_class_init_ex( char* const  class_name )
     return object;
 }
 
-zend_object *php_class_init( char* const  class_name )
+zend_object* php_class_init( char* const class_name_src, size_t class_name_len )
 {
-    zend_class_entry *ce;
-    zend_string *zstr_class_name;
-    zstr_class_name = zend_string_init(class_name, strlen(class_name), 0);
-
-    // Get the class entry
-    ce = zend_lookup_class(zstr_class_name);
+    zend_string* class_name =
+        zend_string_init(class_name_src, class_name_len, 0);
+    zend_class_entry* ce = zend_lookup_class(class_name);
     
     // Check if the class exists
     if( ce == NULL )
-    {
-        php_error_docref(
-            NULL,
-            E_ERROR, 
-            "Class \"%s\" not found",
-            class_name
-        );
-    }
+        php_error_docref(NULL, E_ERROR, "Class \"%s\" not found", class_name->val);
 
     ce->destructor = NULL;
 
-    zval obj;
-    object_init_ex(&obj, ce);
-    // zend_object *object = emalloc(sizeof(zend_object));
-    zend_object *object = Z_OBJ_P(&obj);
+    //  Previous init
+    // zval _object;
+    // object_init_ex(&_object, ce);
+    // zend_object* object = Z_OBJ_P(&_object);
+    // return object;
 
-    return object;
+    zval* object = (zval*)emalloc(sizeof(zend_object));
+    object_init_ex(object, ce);
+    
+    return Z_OBJ_P(object);
 }
 
-void php_class_call_constructor( zend_object* zend_object_class, unsigned int param_counts, zval* params )
+void php_class_call_constructor( zend_object* zend_object_class, zend_long param_counts, zval* params )
 {
     zend_string*    method          =  zend_string_init("__construct", sizeof("__construct") - 1, 0);
     zval*           return_value    =  (zval*)emalloc(sizeof(zval));
@@ -413,7 +407,7 @@ void php_class_call_constructor( zend_object* zend_object_class, unsigned int pa
     return_void: { }
 }
 
-zval* php_class_call_method( zend_object* zend_object_class, char* const method_src, size_t method_len, unsigned int param_counts, zval* params, bool silent )
+zval* php_class_call_method( zend_object* zend_object_class, char* const method_src, size_t method_len, zend_long param_counts, zval* params, bool silent )
 {
     zend_string*    method          =  zend_string_init(method_src, method_len, 0);
     zval*           return_value    =  (zval*)emalloc(sizeof(zval));

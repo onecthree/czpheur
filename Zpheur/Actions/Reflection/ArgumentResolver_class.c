@@ -33,7 +33,7 @@ PHP_METHOD(ArgumentResolver, getTargetParameter)
 		Z_PARAM_STRING(method_src, method_len)
 	ZEND_PARSE_PARAMETERS_END();
 
-	zend_object* 	target_class = php_class_init(class_src);
+	zend_object* 	target_class = php_class_init(class_src, class_len);
 	zend_function* 	target_method;
 	bool            target_method_found = false;
 

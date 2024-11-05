@@ -410,7 +410,7 @@ PHP_METHOD(Application, run)
 			zval* 			middleware_props = zend_hash_index_find(Z_ARR_P(middleware), 1);
 
 			zend_string* 	middleware_class_name = zval_get_string(middleware_cname);
-			zend_object* 	middleware_class = php_class_init(middleware_class_name->val);
+			zend_object* 	middleware_class = php_class_init(middleware_class_name->val, middleware_class_name->len);
 
 			/* Set property value {{{ */
 			ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(middleware_props), zend_string* prop_name, zval* prop_value)
@@ -544,7 +544,9 @@ PHP_METHOD(Application, run)
 
 		zval*   		action_class = zend_hash_str_find(dispatched, "class", sizeof("class") - 1);
 		zval*   		action_method = zend_hash_str_find(dispatched, "method", sizeof("method") - 1);
-		zend_object*	class_action = php_class_init(Z_STRVAL_P(action_class));
+
+		zend_string*    _action_class = zval_get_string(action_class);
+		zend_object*	class_action = php_class_init(_action_class->val, _action_class->len);
 
 		/* Call action constructor */
 		{

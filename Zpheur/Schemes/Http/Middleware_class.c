@@ -59,7 +59,8 @@ PHP_METHOD(Middleware, setGlobalLists)
         if( !middleware_class || Z_TYPE_P(middleware_class) != IS_STRING )
             php_error_docref(NULL, E_ERROR, "Array of arg 01 must be string");            
 
-        zend_object* middleware_class_init = php_class_init(Z_STRVAL_P(middleware_class));
+        zend_string* _middleware_class = zval_get_string(middleware_class);
+        zend_object* middleware_class_init = php_class_init(_middleware_class->val, _middleware_class->len);
 
         ZEND_HASH_FOREACH_PTR(&middleware_class_init->ce->function_table, zend_function* value) 
         {
@@ -126,7 +127,7 @@ PHP_METHOD(Middleware, withActionCall)
 
     if( static_call )
     {
-        zend_object*    target_class = php_class_init(class_src);
+        zend_object*    target_class = php_class_init(class_src, class_len);
         zend_function*  target_method;
         bool            target_method_found = false;
 

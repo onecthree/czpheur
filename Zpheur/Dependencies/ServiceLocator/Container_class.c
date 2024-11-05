@@ -119,7 +119,7 @@ PHP_METHOD(Container, get)
         if(! (value = zend_hash_str_find(Z_ARR_P(scalar_container), name_src, name_len)) )
         {
 
-            zend_object* target_class = php_class_init(name_src);
+            zend_object* target_class = php_class_init(name_src, name_len);
 
             php_class_call_method(target_class, "__construct", sizeof("__construct") - 1, 0, NULL, 1);
 

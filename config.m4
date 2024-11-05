@@ -117,6 +117,7 @@ if test "$PHP_ZPHEUR" != "no"; then
       include/dotenv.c                                                  \
       include/furouter.c                                                \
       include/zerror.c                                                  \
+      zpheur_hem.c                                                      \
       zpheur.c                                                          \
     ],                                                         
   [$ext_shared], ,

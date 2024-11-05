@@ -74,7 +74,10 @@ PHP_METHOD(Filesystem, getItem)
             "datetime_object", sizeof("datetime_object") - 1, 0, NULL);
 
     zend_object* item_tag_aware =
-        php_class_init("Zpheur\\Caches\\Adapter\\Filesystem\\ItemTagHandler");
+        php_class_init(
+            "Zpheur\\Caches\\Adapter\\Filesystem\\ItemTagHandler",
+            sizeof("Zpheur\\Caches\\Adapter\\Filesystem\\ItemTagHandler") - 1
+        );
 
     zval fs_filename;
     ZVAL_STRING(&fs_filename, name_src);

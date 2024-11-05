@@ -31,7 +31,7 @@ PHP_METHOD(Phase, __construct)
         zend_hash_index_find(Z_ARR_P(z_array_config), CONST_PHASE_DB_DRIVER);
 
     // Declare new PDO class to check connection info was valid
-    zend_object *z_pdo = php_class_init("PDO");
+    zend_object *z_pdo = php_class_init("PDO", sizeof("PDO") - 1);
     zval *z_params_pdo = safe_emalloc(3, sizeof(zval), 0);
 
     int conn_info_len = snprintf(NULL, 0, "mysql:host=%s;port=%ld;dbname=%s", 
