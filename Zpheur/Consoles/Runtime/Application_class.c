@@ -1,6 +1,6 @@
 #include <php.h>
 #include <ext/standard/info.h>
-#include<Zend/zend_types.h>
+#include <Zend/zend_types.h>
 #include <php_zpheur.h>
 
 #include <ctype.h>
