@@ -44,14 +44,14 @@ If PHP was installed using the apt package manager via ```ppa:ondrej/php```, the
 \
 For the configuration:
 ```bash
-# Under czpheur clone directory
+# Under the czpheur clone directory
 $ sudo mv zpheur.ini /etc/php/8.x/mods-available/
 
-# Doing a symbolic link for PHP CLI and FPM target
+# Creating a symbolic link for the PHP CLI and FPM targets
 $ sudo ln -s /etc/php/8.x/mods-available/zpheur.ini /etc/php/8.x/cli/conf.d/22-zpheur.ini
 $ sudo ln -s /etc/php/8.x/mods-available/zpheur.ini /etc/php/8.x/fpm/conf.d/22-zpheur.ini
 
-# If you use PHP-FPM, may do restart php8.x-fpm for load the extension
+# If you're running PHP-FPM, you may need to restart php8.x-fpm to load the extension
 ```
 For other PHP installations, the configuration may be different.
 ## Basic Usage
