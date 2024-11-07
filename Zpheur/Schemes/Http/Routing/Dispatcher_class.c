@@ -88,8 +88,9 @@ PHP_METHOD(RoutingDispatcher, dispatch)
             // &target_uri_src, 
             target_uri_src, 
             target_uri_len, 
-            &segments, 
-            path_value)
+            &segments
+            )
+            // path_value)
         )
         {
             zval* class_z = zend_hash_index_find(Z_ARR_P(action_target), 0);
