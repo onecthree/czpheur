@@ -162,6 +162,7 @@ PHP_METHOD(Container, getOf)
         {   
             ZVAL_ZVAL(&arguments_ret, getThis(), 0, 0);
             ZVAL_MAKE_REF(&arguments_ret);
+            Z_ADDREF_P(argument_value);
         }
         else
         {
@@ -184,6 +185,7 @@ PHP_METHOD(Container, getOf)
                         // ZVAL_ZVAL(&arguments_ret, argument_value, 1, 0);
                         // ZVAL_ZVAL(&arguments_ret, argument_value, 0, 0);
                         ZVAL_MAKE_REF(argument_value);
+                        Z_ADDREF_P(argument_value);
                         ZVAL_ZVAL(&arguments_ret, argument_value, 0, 0);
                         ZVAL_MAKE_REF(&arguments_ret);
                     }
@@ -195,6 +197,7 @@ PHP_METHOD(Container, getOf)
                 else // scalars target
                 {
                     ZVAL_MAKE_REF(argument_value);
+                    Z_ADDREF_P(argument_value);
                     ZVAL_ZVAL(&arguments_ret, argument_value, 0, 0);
                     ZVAL_MAKE_REF(&arguments_ret);
                 }
@@ -202,6 +205,7 @@ PHP_METHOD(Container, getOf)
             else // classes target
             {
                 ZVAL_MAKE_REF(argument_value);
+                Z_ADDREF_P(argument_value);
                 ZVAL_ZVAL(&arguments_ret, argument_value, 0, 0);
                 ZVAL_MAKE_REF(&arguments_ret);
             }
