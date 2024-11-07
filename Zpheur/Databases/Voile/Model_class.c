@@ -1123,8 +1123,13 @@ PHP_METHOD(Model, find)
             ZVAL_ARR(filter, array);
         }
         break;
-        default: /* Otherwise it's normal filter */
+        case IS_ARRAY: /* Otherwise it's normal filter */
             zend_hash_destroy(array);
+        break;
+        default: /* Other type not supported */
+            zend_throw_error(zend_ce_exception,
+                "Argument #1 ($filter) must be of type array|string, %s given,", ZTYPE_TO_STR(Z_TYPE_P(filter)));
+            // zend_hash_destroy(array);
         break;
     }
 
