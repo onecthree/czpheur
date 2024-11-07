@@ -22,8 +22,10 @@ int static_furouter_target_uri_parse(
     furouter_target_uri* local_uri_target_src = 
         (furouter_target_uri*)ptr_local_uri_target_src;
 
-    onec_string* path_value;
-    onec_string_init(path_value);
+    // onec_string* path_value;
+    // onec_string_init(path_value);
+    onec_stringlc path_value;
+    onec_string_initlc(path_value);
 
     furouter_target_context context = {0};
 
@@ -45,7 +47,8 @@ int static_furouter_target_uri_parse(
             context.state = STATE_TARGET_FIND_TYPE_PATH_SCOPE;
             context.path_skip = false;
 
-            onec_string_reset(path_value);
+            onec_string_resetlc(path_value);
+            // onec_string_reset(path_value);
         }
 
         context.index += 1;
@@ -62,8 +65,8 @@ int static_furouter_target_uri_parse(
                         context.state = STATE_TARGET_INIT_SCOPE;
                         context.path_index += 1;
 
-                        local_uri_target_src[local_uri_target_len].val = onec_string_get(path_value);
-                        local_uri_target_src[local_uri_target_len].len = path_value->len;
+                        local_uri_target_src[local_uri_target_len].val = onec_string_getlc(path_value);
+                        local_uri_target_src[local_uri_target_len].len = path_value.len;
 
                         switch( context_type )
                         {
@@ -131,7 +134,7 @@ int static_furouter_target_uri_parse(
                 {   
                     case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
                     case TOKEN_ALPHA_UPPER_START ... TOKEN_ALPHA_UPPER_END:
-                        onec_string_put(path_value, context.input);
+                        onec_string_putlc(path_value, context.input);
                     break;
                     default:
                         context.state = STATE_TARGET_FIND_TYPE_PATH_SCOPE;
@@ -143,7 +146,7 @@ int static_furouter_target_uri_parse(
                 switch( context.input )
                 {
                     case TOKEN_DIGIT_START ... TOKEN_DIGIT_END:
-                        onec_string_put(path_value, context.input);
+                        onec_string_putlc(path_value, context.input);
                     break;
                     default:
                         context.state = STATE_TARGET_FIND_TYPE_PATH_SCOPE;
@@ -167,7 +170,7 @@ int static_furouter_target_uri_parse(
                         context.index -= 1;
                     break;
                     default:
-                        onec_string_put(path_value, context.input);
+                        onec_string_putlc(path_value, context.input);
                     break;
                 }
             break;
@@ -175,12 +178,12 @@ int static_furouter_target_uri_parse(
     }
     
     end_parse:
-    onec_string_release(path_value);
+    // onec_string_release(path_value);
     *dest_uri_target_len = local_uri_target_len;
     return 1;
 
     php_end_parse:
-    onec_string_release(path_value);
+    // onec_string_release(path_value);
     furouter_error(E_ERROR, NULL, "unexpected error: [0] failed to reallocate the memory");
     #ifndef PHP_VERSION
     exit(1);
@@ -188,7 +191,7 @@ int static_furouter_target_uri_parse(
     return 1;
 
     uri_max_length:
-    onec_string_release(path_value);
+    // onec_string_release(path_value);
     *dest_uri_target_len = 32;
     return 0;
 }
@@ -204,11 +207,16 @@ onec_string* static_furouter_route_uri_parse(
 {
     int     error_no = -1;
 
+    // onec_string* full_target;
+    // onec_string_init(full_target);
+
+    // onec_string* path_value;
+    // onec_string_init(path_value);
+    onec_stringlc path_value;
+    onec_string_initlc(path_value);
+
     onec_string* full_target;
     onec_string_init(full_target);
-
-    onec_string* path_value;
-    onec_string_init(path_value);
 
     size_t inner_value = 0;
     char   inner_impl;
@@ -239,7 +247,7 @@ onec_string* static_furouter_route_uri_parse(
             is_placeholder = false;
             inner_value = 0;
 
-            onec_string_reset(path_value);
+            onec_string_resetlc(path_value);
         }
 
         context.index += 1;
@@ -272,7 +280,7 @@ onec_string* static_furouter_route_uri_parse(
                     break;
                 }
                 
-                char* __path_value = onec_string_get(path_value);
+                char* __path_value = onec_string_getlc(path_value);
                 fixed_merge_str(_temporare_merge_str, "%c%s ", inner_impl, __path_value);
                 onec_string_append(full_target, 1, _temporare_merge_str);
                 free(__path_value);
@@ -359,7 +367,7 @@ onec_string* static_furouter_route_uri_parse(
                 {   
                     case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
                     case TOKEN_ALPHA_UPPER_START ... TOKEN_ALPHA_UPPER_END:
-                        onec_string_put(path_value, context.input);
+                        onec_string_putlc(path_value, context.input);
                     break;
                     default:
                         context.state = STATE_TARGET_FIND_TYPE_PATH_SCOPE;
@@ -371,7 +379,7 @@ onec_string* static_furouter_route_uri_parse(
                 switch( context.input )
                 {
                     case TOKEN_DIGIT_START ... TOKEN_DIGIT_END:
-                        onec_string_put(path_value, context.input);
+                        onec_string_putlc(path_value, context.input);
                     break;
                     default:
                         context.state = STATE_TARGET_FIND_TYPE_PATH_SCOPE;
@@ -395,7 +403,7 @@ onec_string* static_furouter_route_uri_parse(
                         context.index -= 1;
                     break;
                     default:
-                        onec_string_put(path_value, context.input);
+                        onec_string_putlc(path_value, context.input);
                     break;
                 }
             break;
@@ -422,7 +430,7 @@ onec_string* static_furouter_route_uri_parse(
                     case TOKEN_ALPHA_UPPER_START ... TOKEN_ALPHA_UPPER_END:
                     case TOKEN_DIGIT_START ... TOKEN_DIGIT_END:
                     case TOKEN_SYMBOL_UNDERSCORE:
-                        onec_string_put(path_value, context.input);
+                        onec_string_putlc(path_value, context.input);
                     break;
                     case TOKEN_SYMBOL_OPEN_ROUND_CURLY:
                         context.state = STATE_PLACEHOLDER_INNER_TYPE_PATH_SCOPE;
@@ -511,14 +519,14 @@ onec_string* static_furouter_route_uri_parse(
     
     end_parse:
 
-    onec_string_release(path_value);
+    // onec_string_release(path_value);
     free(_temporare_merge_str);
 
     return full_target;
 
     php_end_parse:
 
-    onec_string_release(path_value);
+    // onec_string_release(path_value);
     free(_temporare_merge_str);
     
     php_file_free:
@@ -539,7 +547,7 @@ onec_string* static_furouter_route_uri_parse(
 #ifndef PHP_VERSION
     exit(1);
 #endif
-    
+    return (void*)NULL;
 }
 
 
@@ -550,11 +558,13 @@ int static_furouter_finder(
     furouter_fund**                 route_fund,
     furouter_target_uri*            target_uri_src,
     size_t                          target_uri_len,
-    HashTable**                     placeholder,
-    onec_string*                    path_value
+    HashTable**                     placeholder
+    // onec_string*                    path_value
 )
 {
     furouter_finder_context context = {0};
+    onec_stringlc path_value;
+    onec_string_initlc(path_value);
 
         context.index       = 0;
         context.path_index  = 0;
@@ -573,7 +583,8 @@ int static_furouter_finder(
             case STATE_FINDER_TYPE_SCOPE:
                 context.local_path_len = 0;
                 context.route_count += 1;
-                onec_string_reset(path_value);
+                onec_string_resetlc(path_value);
+                // onec_string_reset(path_value);
 
                 switch( context.input )
                 {
@@ -656,7 +667,9 @@ int static_furouter_finder(
                         #ifdef PHP_VERSION
                         zval placeholder_value;
                         ZVAL_STRINGL(&placeholder_value, _target_uri_src.val, _target_uri_src.len);
-                        zend_hash_update_ind(*placeholder, zend_string_init(path_value->val, path_value->len, 0), &placeholder_value);
+                        onec_string_trimlc(path_value);
+                        zend_hash_update_ind(*placeholder, zend_string_init(path_value.val, path_value.len, 0), &placeholder_value);
+                        // zend_hash_update_ind(*placeholder, zend_string_init(path_value->val, path_value->len, 0), &placeholder_value);
                         #endif
 
                         context.state = STATE_FINDER_TYPE_SCOPE;
@@ -664,7 +677,7 @@ int static_furouter_finder(
                     }
                     break;
                     default:    
-                        onec_string_put(path_value, context.input);
+                        onec_string_putlc(path_value, context.input);
                     break;
                 }
             break;
