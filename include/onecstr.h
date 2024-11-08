@@ -19,6 +19,9 @@ typedef struct _onec_stringlc
 	size_t    len;
 } onec_stringlc;
 
+#define onec_string_initd( string, length ) _onec_string_initd(string, length)
+onec_string* _onec_string_initd( char* const string, size_t length );
+
 #define onec_string_init( onec_str ) _onec_string_init(&onec_str)
 void _onec_string_init( onec_string** onec_str );
 

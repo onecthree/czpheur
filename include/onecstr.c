@@ -6,6 +6,22 @@
 #include "onecstr.h"
 
 
+onec_string* __attribute__ ((noinline))
+_onec_string_initd( char* const string, size_t length )
+{
+	onec_string* onec_str = (onec_string*)malloc(sizeof(onec_string));
+	onec_str->val = (char*)malloc(sizeof(char) * length);
+	onec_str->size = length * 2;
+	onec_str->len = length;
+
+	for( int i = 0; i < length; i += 1 )
+		onec_str->val[i] = string[i];
+
+	onec_str->val[length] = '\0';
+
+	return onec_str;
+}
+
 void inline __attribute__ ((always_inline))
 _onec_string_init( onec_string** onec_str )
 {
