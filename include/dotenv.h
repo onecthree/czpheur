@@ -129,9 +129,27 @@ typedef struct
 	bool      under_double_quote;
 } dotenv_value_context;
 
-inline static void tcast_check( int64_t* tcast_bool_inc, int* tcast_numeric_state,  dotenv_context* context );
+inline static void tcast_check(
+	int64_t* 		tcast_bool_inc,
+	int* 			tcast_numeric_state, 
+	dotenv_context* context 
+);
 
-int dotenv_parse( char const* filename_env, HashTable** target_key_value, HashTable** target_comments, bool save_comment, bool type_cast );
+int unsafe_dotenv_parse(
+	char* const 	filename_env,
+	HashTable** 	target_key_value,
+	HashTable** 	target_comments,
+	bool 			save_comment,
+	bool 			type_cast
+);
+
+int safe_dotenv_parse(
+	char* const 	filename_env,
+	HashTable** 	target_key_value,
+	HashTable** 	target_comments,
+	bool 			save_comment,
+	bool 			type_cast
+);
 
 onec_string* dotenv_cache_save( zval* key_value );
 
