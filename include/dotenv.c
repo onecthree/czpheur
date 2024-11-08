@@ -46,7 +46,7 @@ tcast_check( int64_t* tcast_bool_inc, int* tcast_numeric_state,  dotenv_context*
 	}
 }
 
-int unsafe_dotenv_parse( char* const filename_env, HashTable** target_key_value, HashTable** target_comments, bool save_comment, bool type_cast )
+int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value, HashTable** target_comments, bool save_comment, bool type_cast )
 {
 	FILE*   file_env = fopen(filename_env, "r");
 	int		error_no = -1;
@@ -547,7 +547,7 @@ int unsafe_dotenv_parse( char* const filename_env, HashTable** target_key_value,
  	return 0;
 }
 
-int safe_dotenv_parse( char* const filename_env, HashTable** target_key_value, HashTable** target_comments, bool save_comment, bool type_cast )
+int dotenv_safe_parse( char* const filename_env, HashTable** target_key_value, HashTable** target_comments, bool save_comment, bool type_cast )
 {
 	FILE*   file_env = fopen(filename_env, "r");
 	int		error_no = -1;

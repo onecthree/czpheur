@@ -137,9 +137,9 @@ PHP_METHOD(Dotenv, parse)
 
     if( !(1<<Z_TYPE_P(unsafe_parse) & (1<<_IS_BOOL|1<<IS_LONG|1<<IS_TRUE|1<<IS_FALSE)) ||
     !zval_get_long(unsafe_parse) )
-		safe_dotenv_parse(Z_STRVAL_P(env_path), &key_value, &comments, save_comment, type_cast);
+		dotenv_safe_parse(Z_STRVAL_P(env_path), &key_value, &comments, save_comment, type_cast);
 	else	
-		unsafe_dotenv_parse(Z_STRVAL_P(env_path), &key_value, &comments, save_comment, type_cast);
+		dotenv_unsafe_parse(Z_STRVAL_P(env_path), &key_value, &comments, save_comment, type_cast);
 
 	zval key_value_target;
 	ZVAL_ARR(&key_value_target, key_value);

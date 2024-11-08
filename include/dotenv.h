@@ -135,7 +135,7 @@ inline static void tcast_check(
 	dotenv_context* context 
 );
 
-int unsafe_dotenv_parse(
+int dotenv_unsafe_parse(
 	char* const 	filename_env,
 	HashTable** 	target_key_value,
 	HashTable** 	target_comments,
@@ -143,7 +143,7 @@ int unsafe_dotenv_parse(
 	bool 			type_cast
 );
 
-int safe_dotenv_parse(
+int dotenv_safe_parse(
 	char* const 	filename_env,
 	HashTable** 	target_key_value,
 	HashTable** 	target_comments,
