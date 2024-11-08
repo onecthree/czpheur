@@ -102,6 +102,17 @@ PHP_METHOD(Dotenv, unserialize)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
+PHP_METHOD(Dotenv, unsafeParse)
+{
+	ZEND_PARSE_PARAMETERS_NONE();
+
+	zval unsafe_parse;
+	ZVAL_TRUE(&unsafe_parse);
+	zend_this_update_property("unsafe_parse", &unsafe_parse);
+
+	RETURN_ZVAL(getThis(), 1, 0);
+}
+
 PHP_METHOD(Dotenv, parse)	
 {	
 	bool save_comment = false;
@@ -122,7 +133,13 @@ PHP_METHOD(Dotenv, parse)
     ALLOC_HASHTABLE(comments);
     zend_hash_init(comments, 0, NULL, ZVAL_PTR_DTOR, 0);
 
-	dotenv_parse(Z_STRVAL_P(env_path), &key_value, &comments, save_comment, type_cast);
+    zval* unsafe_parse = zend_this_read_property("unsafe_parse");
+
+    if( !(1<<Z_TYPE_P(unsafe_parse) & (1<<_IS_BOOL|1<<IS_LONG|1<<IS_TRUE|1<<IS_FALSE)) ||
+    !zval_get_long(unsafe_parse) )
+		safe_dotenv_parse(Z_STRVAL_P(env_path), &key_value, &comments, save_comment, type_cast);
+	else	
+		unsafe_dotenv_parse(Z_STRVAL_P(env_path), &key_value, &comments, save_comment, type_cast);
 
 	zval key_value_target;
 	ZVAL_ARR(&key_value_target, key_value);
@@ -148,6 +165,7 @@ ZEND_MINIT_FUNCTION(Zpheur_DataTransforms_Dotenv_Dotenv)
     zpheur_datatransforms_dotenv_dotenv_class_entry = zend_register_internal_class(&ce);
     zpheur_datatransforms_dotenv_dotenv_class_entry->ce_flags |= ZEND_ACC_ALLOW_DYNAMIC_PROPERTIES;
 
+    zend_declare_property_bool(zpheur_datatransforms_dotenv_dotenv_class_entry, "unsafe_parse", sizeof("unsafe_parse") - 1, false, ZEND_ACC_PUBLIC);
     zend_declare_property_null(zpheur_datatransforms_dotenv_dotenv_class_entry, "env_path", sizeof("env_path") - 1, ZEND_ACC_PUBLIC);
     zend_declare_property_null(zpheur_datatransforms_dotenv_dotenv_class_entry, "env", sizeof("env") - 1, ZEND_ACC_PUBLIC);
 
