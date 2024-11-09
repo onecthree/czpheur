@@ -86,7 +86,7 @@ PHP_METHOD(RoutingDispatcher, dispatch)
             route_target->len, 
             &route_fund, 
             // &target_uri_src, 
-            target_uri_src, 
+            (void*)&target_uri_src, 
             target_uri_len, 
             &segments
             )
