@@ -66,32 +66,15 @@ PHP_METHOD(RoutingDispatcher, dispatch)
     size_t                  target_uri_len = TARGET_URI_MAX_LENGTH_AS_REV;
 
     // Parse current request url to struct formatted
-    if(! static_furouter_target_uri_parse(
-            http_uri_src,
-            (void*)&target_uri_src,
-            &target_uri_len
-        )
-    )
-    {
+    if(! static_furouter_target_uri_parse(http_uri_src, (void*)&target_uri_src, &target_uri_len) )
         goto target_uri_max_length;
-    }
 
     // Finder route
     // When route target not found, is ignored as default declaration value
     ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(route_source), zend_string* route_target, zval* action_target)
     {
         // return 1 if found otherwise is 0
-        if( static_furouter_finder(
-            route_target->val, 
-            route_target->len, 
-            &route_fund, 
-            // &target_uri_src, 
-            (void*)&target_uri_src, 
-            target_uri_len, 
-            &segments
-            )
-            // path_value)
-        )
+        if( static_furouter_finder(route_target, &route_fund, (void*)&target_uri_src, target_uri_len, &segments) )
         {
             zval* class_z = zend_hash_index_find(Z_ARR_P(action_target), 0);
             zval* method_z = zend_hash_index_find(Z_ARR_P(action_target), 1);

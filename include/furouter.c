@@ -10,31 +10,21 @@
 
 
 // Request url parse
-int static_furouter_target_uri_parse(
-    char* const url,
-    void* ptr_local_uri_target_src,
-    size_t* dest_uri_target_len
-)
+int static_furouter_target_uri_parse( char* url, void* ptr_local_uri_target_src, size_t* dest_uri_target_len )
 {
-    int                  error_no = -1;
-    size_t               local_uri_target_len = 0;
+    int error_no = -1;
+    size_t local_uri_target_len = 0;
 
-    // furouter_target_uri* local_uri_target_src = 
-    //     (furouter_target_uri*)ptr_local_uri_target_src;
-
-    // onec_string* path_value;
-    // onec_string_init(path_value);
     onec_stringlc path_value;
     onec_string_initlc(path_value);
 
     furouter_target_context context = {0};
-
         context.index = 1;
         context.path_index = 0;
         context.state = STATE_TARGET_INIT_SCOPE;
 
-    unsigned int                context_type = 0;
-    int                         current_type = 0;
+    int context_type = 0;
+    int current_type = 0;
 
     while( true )
     {
@@ -43,157 +33,97 @@ int static_furouter_target_uri_parse(
         if( context.state == STATE_TARGET_INIT_SCOPE )
         {
             context_type = 0;
-
             context.state = STATE_TARGET_FIND_TYPE_PATH_SCOPE;
             context.path_skip = false;
 
             onec_string_resetlc(path_value);
-            // onec_string_reset(path_value);
         }
 
         context.index += 1;
 
-        switch( context.state )
-        {
-            case STATE_TARGET_FIND_TYPE_PATH_SCOPE:
-                switch( context.input )
-                {   
-                    case TOKEN_SYMBOL_QUERY: // if query, backward to slash path
-                    case TOKEN_CHAR_NULL: // if null, it mean main index
-                        context.index -= 1;
-                    case TOKEN_SYMBOL_SLASH: // if begin/end path
-                        context.state = STATE_TARGET_INIT_SCOPE;
-                        context.path_index += 1;
+        switch( context.input )
+        {   
+            case TOKEN_SYMBOL_QUERY: // if query, backward to slash path
+            case TOKEN_CHAR_NULL: // if null, it mean main index
+                context.index -= 1;
+            case TOKEN_SYMBOL_SLASH: // if begin/end path
+                context.state = STATE_TARGET_INIT_SCOPE;
+                context.path_index += 1;
 
-                        // ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].val = onec_string_getlc(path_value);
-                        // ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].len = path_value.len;
-                        ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].val = onec_string_getlc(path_value);
-                        ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].len = path_value.len;
+                ((furouter_target_uri*)
+                    ptr_local_uri_target_src)[local_uri_target_len].val = onec_string_getlc(path_value);
+                ((furouter_target_uri*)
+                    ptr_local_uri_target_src)[local_uri_target_len].len = path_value.len;
 
-                        switch( context_type )
-                        {
-                            case PATH_TYPE_ALPHA:
-                                ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].type = PATH_IMPL_ALPHA;
-                            break;
-                            case PATH_TYPE_NUM:
-                                ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].type = PATH_IMPL_NUM;
-                            break;
-                            case PATH_TYPE_ALNUM:
-                                ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].type = PATH_IMPL_ALNUM;
-                            break;
-                            case PATH_TYPE_ALPHA | PATH_TYPE_RANDOM:
-                            case PATH_TYPE_NUM | PATH_TYPE_RANDOM:
-                            case PATH_TYPE_ALNUM | PATH_TYPE_RANDOM:
-                            case PATH_TYPE_RANDOM:
-                                ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].type = PATH_IMPL_RANDOM;
-                            break;
-                            default:
-                                ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].type = PATH_IMPL_ASTERIK;
-                            break;
-                        }
-
-                        local_uri_target_len += 1;
-
-                        if( local_uri_target_len > TARGET_URI_MAX_LENGTH_AS_INDEX )
-                        {
-                            goto uri_max_length;
-                        }
-
-                        switch( context.input )
-                        {
-                            case TOKEN_SYMBOL_QUERY:
-                            case TOKEN_CHAR_NULL:
-                                goto end_parse;
-                            break;
-                            default:
-                                if( url[context.index] == TOKEN_CHAR_NULL )
-                                    goto end_parse;
-
-                                context.state = STATE_TARGET_INIT_SCOPE;
-                            break;
-                        }
+                switch( context_type )
+                {
+                    case PATH_TYPE_ALPHA:
+                        ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].type = PATH_IMPL_ALPHA;
                     break;
-                    case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
-                    case TOKEN_ALPHA_UPPER_START ... TOKEN_ALPHA_UPPER_END: 
-                        context.state = STATE_TARGET_ALPHA_TYPE_PATH_SCOPE;
-                        context.index -= 1; // the first char of path will choose of path finder next token
-                        context_type |= PATH_TYPE_ALPHA;
+                    case PATH_TYPE_NUM:
+                        ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].type = PATH_IMPL_NUM;
                     break;
-                    case TOKEN_DIGIT_START ... TOKEN_DIGIT_END: 
-                        context.state = STATE_TARGET_NUM_TYPE_PATH_SCOPE;
-                        context.index -= 1;
-                        context_type |= PATH_TYPE_NUM;
+                    case PATH_TYPE_ALNUM:
+                        ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].type = PATH_IMPL_ALNUM;
                     break;
-                    default:        
-                        context.state = STATE_TARGET_RANDOM_TYPE_PATH_SCOPE;
-                        context.index -= 1;
-                        context_type |= PATH_TYPE_RANDOM;
-                    break;
-                }
-            break;
-            case STATE_TARGET_ALPHA_TYPE_PATH_SCOPE:
-                switch( context.input )
-                {   
-                    case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
-                    case TOKEN_ALPHA_UPPER_START ... TOKEN_ALPHA_UPPER_END:
-                        onec_string_putlc(path_value, context.input);
+                    case PATH_TYPE_ALPHA | PATH_TYPE_RANDOM:
+                    case PATH_TYPE_NUM | PATH_TYPE_RANDOM:
+                    case PATH_TYPE_ALNUM | PATH_TYPE_RANDOM:
+                    case PATH_TYPE_RANDOM:
+                        ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].type = PATH_IMPL_RANDOM;
                     break;
                     default:
-                        context.state = STATE_TARGET_FIND_TYPE_PATH_SCOPE;
-                        context.index -= 1;
+                        ((furouter_target_uri*)ptr_local_uri_target_src)[local_uri_target_len].type = PATH_IMPL_ASTERIK;
                     break;
                 }
-            break;
-            case STATE_TARGET_NUM_TYPE_PATH_SCOPE:
+
+                local_uri_target_len += 1;
+
+                if( local_uri_target_len > TARGET_URI_MAX_LENGTH_AS_INDEX )
+                    goto uri_max_length;
+
                 switch( context.input )
                 {
-                    case TOKEN_DIGIT_START ... TOKEN_DIGIT_END:
-                        onec_string_putlc(path_value, context.input);
-                    break;
-                    default:
-                        context.state = STATE_TARGET_FIND_TYPE_PATH_SCOPE;
-                        context.index -= 1;
-                    break;
-                }
-            break;
-            case STATE_TARGET_RANDOM_TYPE_PATH_SCOPE:
-                switch( context.input )
-                {
-                    case TOKEN_CHAR_NULL:
-                    case TOKEN_SYMBOL_SLASH:
                     case TOKEN_SYMBOL_QUERY:
-                        context.state = STATE_TARGET_FIND_TYPE_PATH_SCOPE;
-                        context.index -= 1;
-                    break;
-                    case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
-                    case TOKEN_ALPHA_UPPER_START ... TOKEN_ALPHA_UPPER_END:
-                    case TOKEN_DIGIT_START ... TOKEN_DIGIT_END:
-                        context.state = STATE_TARGET_FIND_TYPE_PATH_SCOPE;
-                        context.index -= 1;
+                    case TOKEN_CHAR_NULL:
+                        goto end_parse;
                     break;
                     default:
-                        onec_string_putlc(path_value, context.input);
+                        if( url[context.index] == TOKEN_CHAR_NULL )
+                            goto end_parse;
+
+                        context.state = STATE_TARGET_INIT_SCOPE;
                     break;
                 }
+            break;
+            case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
+            case TOKEN_ALPHA_UPPER_START ... TOKEN_ALPHA_UPPER_END: 
+                context_type |= PATH_TYPE_ALPHA;
+                onec_string_putlc(path_value, context.input);
+            break;
+            case TOKEN_DIGIT_START ... TOKEN_DIGIT_END: 
+                context_type |= PATH_TYPE_NUM;
+                onec_string_putlc(path_value, context.input);
+            break;
+            default:        
+                context_type |= PATH_TYPE_RANDOM;
+                onec_string_putlc(path_value, context.input);
             break;
         }
     }
     
     end_parse:
-    // onec_string_release(path_value);
     *dest_uri_target_len = local_uri_target_len;
     return 1;
 
     php_end_parse:
-    // onec_string_release(path_value);
     furouter_error(E_ERROR, NULL, "unexpected error: [0] failed to reallocate the memory");
-    #ifndef PHP_VERSION
+#ifndef PHP_VERSION
     exit(1);
-    #endif
+#endif
     return 1;
 
     uri_max_length:
-    // onec_string_release(path_value);
     *dest_uri_target_len = 32;
     return 0;
 }
@@ -201,19 +131,10 @@ int static_furouter_target_uri_parse(
 /**
  * Parsing all route files web
  */
-onec_string* static_furouter_route_uri_parse(
-    char* const route,
-    char* const class_name,
-    char* const method_name
-)
+onec_string* static_furouter_route_uri_parse( char* route, char* class_name, char* method_name )
 {
-    int     error_no = -1;
+    int error_no = -1;
 
-    // onec_string* full_target;
-    // onec_string_init(full_target);
-
-    // onec_string* path_value;
-    // onec_string_init(path_value);
     onec_stringlc path_value;
     onec_string_initlc(path_value);
 
@@ -447,8 +368,6 @@ onec_string* static_furouter_route_uri_parse(
                 switch( context.input )
                 {
                     case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
-                        // inner_value *= 10;
-                        // inner_value += context.input;
                         switch( context.input )
                         {
                             case 100 ... 126:
@@ -520,19 +439,13 @@ onec_string* static_furouter_route_uri_parse(
     }
     
     end_parse:
-
-    // onec_string_release(path_value);
     free(_temporare_merge_str);
-
     return full_target;
 
     php_end_parse:
-
-    // onec_string_release(path_value);
     free(_temporare_merge_str);
     
     php_file_free:
-
     switch( error_no )
     {
         // case 0: furouter_error(E_ERROR, NULL, "[furouter_route_uri_parse] [0] failed to open file target: no such file or directory \"%s\"", file_target); break;
@@ -552,17 +465,13 @@ onec_string* static_furouter_route_uri_parse(
     return (void*)NULL;
 }
 
-
 // Route finder
 int static_furouter_finder(
-    char*                           route_current_src,
-    size_t                          route_current_len,
-    furouter_fund**                 route_fund,
-    // furouter_target_uri*            target_uri_src,
-    void*                           target_uri_src,
-    size_t                          target_uri_len,
-    HashTable**                     placeholder
-    // onec_string*                    path_value
+    zend_string* route_current,
+    furouter_fund** route_fund,
+    void* target_uri_src,
+    size_t target_uri_len,
+    HashTable** placeholder
 )
 {
     furouter_finder_context context = {0};
@@ -574,12 +483,10 @@ int static_furouter_finder(
         context.state       = STATE_FINDER_TYPE_SCOPE;
         context.route_count = 0;
         
-    while( context.index <= route_current_len ) // follow char length of each route list choosed
+    while( context.index <= route_current->len ) // follow char length of each route list choosed
     {
-        context.input = route_current_src[context.index];
+        context.input = route_current->val[context.index];
         context.index += 1;
-        // furouter_target_uri
-        //     _target_uri_src = target_uri_src[context.path_index];
 
         if( context.path_index >= target_uri_len )
             goto return_not_found;
@@ -597,7 +504,7 @@ int static_furouter_finder(
                     case PATH_IMPL_ASTERIK:
                         if( ((furouter_target_uri*)target_uri_src)[context.path_index].type == context.input )
                         {
-                            switch( route_current_src[context.index] )
+                            switch( route_current->val[context.index] )
                             {   
                                 case TOKEN_SYMBOL_WHITESPACE:
                                     context.index += 1;
@@ -676,7 +583,6 @@ int static_furouter_finder(
                         onec_string_trimlc(path_value);
                         ZVAL_STRINGL(&placeholder_value, ((furouter_target_uri*)target_uri_src)[context.path_index].val, ((furouter_target_uri*)target_uri_src)[context.path_index].len);
                         zend_hash_update_ind(*placeholder, zend_string_init(path_value.val, path_value.len, 0), &placeholder_value);
-                        // zend_hash_update_ind(*placeholder, zend_string_init(path_value->val, path_value->len, 0), &placeholder_value);
                         #endif
 
                         context.state = STATE_FINDER_TYPE_SCOPE;
