@@ -63,14 +63,11 @@ PHP_METHOD(HttpKernel, handle)
 		zend_error(E_ERROR, "failed to function call");	
 	}
 
-	// RETURN_NULL();
 	// A resolver for middleware list check [block step]
 	zval* params_process = safe_emalloc(1, sizeof(zval), 0);
 	ZVAL_ZVAL(&params_process[0], dispatched_bind, 1, 0);
 	zval* middleware_lists = 
 		php_class_call_method(Z_OBJ_P(action_resolver), "process", sizeof("process") - 1, 1, params_process, 0);
-
-	// RETURN_NULL();
 
 	// Iteration for middleware list arg parse [block step]
 	ZEND_HASH_FOREACH_VAL(Z_ARR_P(middleware_lists), zval* middleware)

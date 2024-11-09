@@ -1,0 +1,2 @@
+include/onecstr.lo: /home/onecthree/Projects/czpheur/include/onecstr.c \
+ /home/onecthree/Projects/czpheur/include/onecstr.h
