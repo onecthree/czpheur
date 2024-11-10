@@ -9,7 +9,9 @@
 #include "furouter.h"
 
 
-// Request url parse
+/**
+ * Application request URI parser
+ */
 int static_furouter_target_uri_parse( char* url, void* ptr_local_uri_target_src, size_t* dest_uri_target_len )
 {
     int error_no = -1;
@@ -129,7 +131,7 @@ int static_furouter_target_uri_parse( char* url, void* ptr_local_uri_target_src,
 }
 
 /**
- * Parsing all route files web
+ * Application route parser
  */
 onec_string* static_furouter_route_uri_parse( char* route, char* class_name, char* method_name )
 {
@@ -465,14 +467,10 @@ onec_string* static_furouter_route_uri_parse( char* route, char* class_name, cha
     return (void*)NULL;
 }
 
-// Route finder
-int static_furouter_finder(
-    zend_string* route_current,
-    furouter_fund** route_fund,
-    void* target_uri_src,
-    size_t target_uri_len,
-    HashTable** placeholder
-)
+/**
+ * Application route finder
+ */
+int static_furouter_finder( zend_string* route_current, furouter_fund** route_fund, void* target_uri_src, size_t target_uri_len, HashTable** placeholder )
 {
     furouter_finder_context context = {0};
     onec_stringlc path_value;

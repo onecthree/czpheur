@@ -11,8 +11,10 @@
 #include <string.h>
 #include <include/onecstr.h>
 
+/**
+ * Dummy struct for testing out outside PHP runtime/env
+ */
 #ifndef PHP_VERSION
-
 typedef struct
 {
     int todo;
@@ -50,8 +52,8 @@ typedef struct
 #endif
 #endif
 
-#define TARGET_URI_MAX_LENGTH_AS_REV               32
-#define TARGET_URI_MAX_LENGTH_AS_INDEX             TARGET_URI_MAX_LENGTH_AS_REV - 1
+#define TARGET_URI_MAX_LENGTH_AS_REV            32
+#define TARGET_URI_MAX_LENGTH_AS_INDEX          TARGET_URI_MAX_LENGTH_AS_REV - 1
 
 #define TOKEN_ALPHA_LOWER_START                 'a'
 #define TOKEN_ALPHA_LOWER_END                   'z'
@@ -108,11 +110,6 @@ typedef struct
 #define PATH_IMPL_ALNUM                         '&'
 #define PATH_IMPL_RANDOM                        '$'
 
-// #define PLACEHOLDER_TYPE_RANDOM                 12491219
-// #define PLACEHOLDER_TYPE_ALPHA                  1090337
-// #define PLACEHOLDER_TYPE_ALNUM                  1090279
-// #define PLACEHOLDER_TYPE_NUM                    12279
-
 #define PLACEHOLDER_TYPE_RANDOM                 11497110100111109
 #define PLACEHOLDER_TYPE_ALPHA                  9710811210497
 #define PLACEHOLDER_TYPE_ALNUM                  97108110117109
@@ -167,8 +164,9 @@ typedef struct _furouter_fund
     long        order;
 } furouter_fund;
 
-// int static_furouter_target_uri_parse( char* const url, furouter_target_uri** dest_uri_target_src, size_t* dest_uri_target_len );
-int static_furouter_target_uri_parse( char* url, void* ptr_local_uri_target_src, size_t* dest_uri_target_len );
+int             static_furouter_target_uri_parse( char* url, void* ptr_local_uri_target_src, size_t* dest_uri_target_len );
+onec_string*    static_furouter_route_uri_parse( char* route, char* class_name, char* method_name );
+int             static_furouter_finder( zend_string* route_current, furouter_fund** route_fund, void* target_uri_src, size_t target_uri_len, HashTable** placeholder );
 
 #define fixed_merge_str( str_ptr, ... ) \
     size_t _temporare_merge_str_len = snprintf(NULL, 0, __VA_ARGS__); \
@@ -182,12 +180,5 @@ int static_furouter_target_uri_parse( char* url, void* ptr_local_uri_target_src,
     str_ptr = __temporare_merge_str; \
     sprintf(str_ptr, __VA_ARGS__); \
     str_ptr[_temporare_merge_str_len] = '\0'; \
-
-onec_string* static_furouter_route_uri_parse( char* route, char* class_name, char* method_name );
-
-// int static_furouter_finder( char* target_list_src, size_t target_list_len, furouter_fund** route_fund, furouter_target_uri* target_uri_src, size_t target_uri_len, HashTable** placeholder, onec_string* path_value );
-// int static_furouter_finder( char* target_list_src, size_t target_list_len, furouter_fund** route_fund, furouter_target_uri* target_uri_src, size_t target_uri_len, HashTable** placeholder );
-// int static_furouter_finder( char* route_current_src, size_t route_current_len, furouter_fund** route_fund, void* target_uri_src, size_t target_uri_len, HashTable** placeholder );
-int static_furouter_finder( zend_string* route_current, furouter_fund** route_fund, void* target_uri_src, size_t target_uri_len, HashTable** placeholder );
 
 #endif
