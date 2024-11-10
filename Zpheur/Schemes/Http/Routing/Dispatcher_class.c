@@ -41,9 +41,7 @@ PHP_METHOD(RoutingDispatcher, dispatch)
         );
 
     if( route_source == NULL )
-    {
         zend_error(E_ERROR, "route_source not found");
-    }
 
     HashTable *segments;
     ALLOC_HASHTABLE(segments);
@@ -53,16 +51,10 @@ PHP_METHOD(RoutingDispatcher, dispatch)
     ALLOC_HASHTABLE(context_dispatched);
     zend_hash_init(context_dispatched, 0, NULL, ZVAL_PTR_DTOR, 0);
 
-    // malloc init
-    // furouter_fund* route_fund = (furouter_fund*)emalloc(sizeof(furouter_fund));
-    //     route_fund->class_name = NULL;
-    //     route_fund->method_name = NULL;
-    //     route_fund->order = -1;
-
     // Stack init
     furouter_fund route_fund = {
-        .class_name = NULL,
-        .method_name = NULL,
+        .class_name = zend_string_init_fast("", 0),
+        .method_name = zend_string_init_fast("", 0),
         .order = -1,
     };
 
@@ -99,32 +91,24 @@ PHP_METHOD(RoutingDispatcher, dispatch)
     target_uri_max_length:
     onec_string_release(path_value);
 
-    zval order;
+    zval order, class_src, method_src, segment_src;
+
     ZVAL_LONG(&order, route_fund.order);
-    zend_hash_update_ind(context_dispatched,
-        zend_string_init("order", sizeof("order") - 1, 0),
-        &order
-    );
-
-    zval class_src;
     ZVAL_STRINGL(&class_src, route_fund.class_name->val, route_fund.class_name->len);
-    zend_hash_update_ind(context_dispatched,
-        zend_string_init("class", sizeof("class") - 1, 0),
-        &class_src
-    );
-
-    zval method_src;
     ZVAL_STRINGL(&method_src, route_fund.method_name->val, route_fund.method_name->len);
-    zend_hash_update_ind(context_dispatched,
-        zend_string_init("method", sizeof("method") - 1, 0),
-        &method_src
-    );
-
-    zval segment_src;
     ZVAL_ARR(&segment_src, segments);
-    zend_hash_update_ind(context_dispatched,
-        zend_string_init("segments", sizeof("segments") - 1, 0),
-        &segment_src
+
+    zend_hash_update_ind(
+        context_dispatched, zend_string_init("order", sizeof("order") - 1, 0), &order
+    );
+    zend_hash_update_ind(
+        context_dispatched, zend_string_init("class", sizeof("class") - 1, 0), &class_src
+    );
+    zend_hash_update_ind(
+        context_dispatched, zend_string_init("method", sizeof("method") - 1, 0), &method_src
+    );
+    zend_hash_update_ind(
+        context_dispatched, zend_string_init("segments", sizeof("segments") - 1, 0), &segment_src
     );
 
     zend_string_release(route_fund.class_name);
