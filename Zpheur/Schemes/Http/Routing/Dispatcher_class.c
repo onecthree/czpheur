@@ -53,14 +53,21 @@ PHP_METHOD(RoutingDispatcher, dispatch)
     ALLOC_HASHTABLE(context_dispatched);
     zend_hash_init(context_dispatched, 0, NULL, ZVAL_PTR_DTOR, 0);
 
-    furouter_fund* route_fund = (furouter_fund*)emalloc(sizeof(furouter_fund));
-        route_fund->class = "";
-        route_fund->method = "";
-        route_fund->order = -1;
+    // malloc init
+    // furouter_fund* route_fund = (furouter_fund*)emalloc(sizeof(furouter_fund));
+    //     route_fund->class_name = NULL;
+    //     route_fund->method_name = NULL;
+    //     route_fund->order = -1;
+
+    // Stack init
+    furouter_fund route_fund = {
+        .class_name = NULL,
+        .method_name = NULL,
+        .order = -1,
+    };
 
     onec_string* path_value;
     onec_string_init(path_value);
-
 
     furouter_target_uri     target_uri_src[TARGET_URI_MAX_LENGTH_AS_REV];
     size_t                  target_uri_len = TARGET_URI_MAX_LENGTH_AS_REV;
@@ -69,18 +76,18 @@ PHP_METHOD(RoutingDispatcher, dispatch)
     if(! static_furouter_target_uri_parse(http_uri_src, (void*)&target_uri_src, &target_uri_len) )
         goto target_uri_max_length;
 
-    // Finder route
+    // Loop throught hashtable of application route's
     // When route target not found, is ignored as default declaration value
     ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(route_source), zend_string* route_target, zval* action_target)
     {
         // return 1 if found otherwise is 0
-        if( static_furouter_finder(route_target, &route_fund, (void*)&target_uri_src, target_uri_len, &segments) )
+        if( static_furouter_finder(route_target, (void*)&target_uri_src, target_uri_len, &segments) )
         {
             zval* class_z = zend_hash_index_find(Z_ARR_P(action_target), 0);
             zval* method_z = zend_hash_index_find(Z_ARR_P(action_target), 1);
-            route_fund->class = Z_STRVAL_P(class_z);
-            route_fund->method = Z_STRVAL_P(method_z);
-            route_fund->order = 1;
+            route_fund.class_name = zval_get_string(class_z);
+            route_fund.method_name = zval_get_string(method_z);
+            route_fund.order = 1;
 
             break;
         }
@@ -93,21 +100,21 @@ PHP_METHOD(RoutingDispatcher, dispatch)
     onec_string_release(path_value);
 
     zval order;
-    ZVAL_LONG(&order, route_fund->order);
+    ZVAL_LONG(&order, route_fund.order);
     zend_hash_update_ind(context_dispatched,
         zend_string_init("order", sizeof("order") - 1, 0),
         &order
     );
 
     zval class_src;
-    ZVAL_STRING(&class_src, route_fund->class);
+    ZVAL_STRINGL(&class_src, route_fund.class_name->val, route_fund.class_name->len);
     zend_hash_update_ind(context_dispatched,
         zend_string_init("class", sizeof("class") - 1, 0),
         &class_src
     );
 
     zval method_src;
-    ZVAL_STRING(&method_src, route_fund->method);
+    ZVAL_STRINGL(&method_src, route_fund.method_name->val, route_fund.method_name->len);
     zend_hash_update_ind(context_dispatched,
         zend_string_init("method", sizeof("method") - 1, 0),
         &method_src
@@ -120,15 +127,8 @@ PHP_METHOD(RoutingDispatcher, dispatch)
         &segment_src
     );
 
-    /**
-     *
-     * Under test stack move from malloc'ed
-     *  
-    furouter_target_release(&target_uri_src, target_uri_len);
-    furouter_target_release(&g_target_uri_src, target_uri_len);
-    furouter_fund_release(&route_fund);
-     *
-     */
+    zend_string_release(route_fund.class_name);
+    zend_string_release(route_fund.method_name);
 
     RETURN_ARR(context_dispatched);
 }

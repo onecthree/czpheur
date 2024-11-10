@@ -159,14 +159,15 @@ typedef struct _furouter_target_uri
 
 typedef struct _furouter_fund
 {
-    char*       class;
-    char*       method;
-    long        order;
+    zend_string*    class_name;
+    zend_string*    method_name;
+    long            order;
 } furouter_fund;
 
 int             static_furouter_target_uri_parse( char* url, void* ptr_local_uri_target_src, size_t* dest_uri_target_len );
 onec_string*    static_furouter_route_uri_parse( char* route, char* class_name, char* method_name );
-int             static_furouter_finder( zend_string* route_current, furouter_fund** route_fund, void* target_uri_src, size_t target_uri_len, HashTable** placeholder );
+// int             static_furouter_finder( zend_string* route_current, furouter_fund** route_fund, void* target_uri_src, size_t target_uri_len, HashTable** placeholder );
+int             static_furouter_finder( zend_string* route_current, void* target_uri_src, size_t target_uri_len, HashTable** placeholder );
 
 #define fixed_merge_str( str_ptr, ... ) \
     size_t _temporare_merge_str_len = snprintf(NULL, 0, __VA_ARGS__); \

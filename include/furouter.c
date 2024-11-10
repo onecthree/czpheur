@@ -470,7 +470,7 @@ onec_string* static_furouter_route_uri_parse( char* route, char* class_name, cha
 /**
  * Application route finder
  */
-int static_furouter_finder( zend_string* route_current, furouter_fund** route_fund, void* target_uri_src, size_t target_uri_len, HashTable** placeholder )
+int static_furouter_finder( zend_string* route_current, void* target_uri_src, size_t target_uri_len, HashTable** placeholder )
 {
     furouter_finder_context context = {0};
     onec_stringlc path_value;
