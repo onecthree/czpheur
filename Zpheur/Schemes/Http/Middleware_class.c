@@ -15,6 +15,30 @@
 #include "Middleware_arginfo.h"
 
 
+int inline __attribute__ ((always_inline))
+zend_string_equals_cstr_bt_middleware( zend_string* s1 )
+{
+    if(! s1 ) return 0;
+
+    char* const s2 = "Middleware";
+    size_t len = sizeof("Middleware") - 1;
+    size_t s1_len, s2_len; size_t index = 1;
+
+    for( ;index <= len; index++ )
+    {
+        s1_len = s1->len - index;
+        s2_len = len - index;
+
+        if( !s1->val[s1_len] || s1->val[s1_len] != s2[s2_len] )
+            return 0;
+    }
+
+    if( s1->len > len && s1->val[s1->len - index] != '\\' )
+        return 0;
+
+    return 1;
+}
+
 PHP_METHOD(Middleware, __construct)
 {
     zval* middlewares;
@@ -161,7 +185,7 @@ PHP_METHOD(Middleware, withActionCall)
                 ALLOC_HASHTABLE(argument);
                 zend_hash_init(argument, 0, NULL, ZVAL_PTR_DTOR, 0);
 
-                if( zend_string_equals_cstr(class_attributes_value->name, "Middleware", sizeof("Middleware") - 1) )
+                if( zend_string_equals_cstr_bt_middleware(class_attributes_value->name) )
                 {
                     zval middleware;
                     array_init(&middleware);
@@ -214,8 +238,7 @@ PHP_METHOD(Middleware, withActionCall)
                 ALLOC_HASHTABLE(argument);
                 zend_hash_init(argument, 0, NULL, ZVAL_PTR_DTOR, 0);
 
-
-                if( zend_string_equals_cstr(attribute->name, "Middleware", sizeof("Middleware") - 1) )
+                if( zend_string_equals_cstr_bt_middleware(attribute->name) )
                 {
                     if(! attribute->argc )
                         php_error_docref(NULL, E_ERROR, "Middleware attribute must have atleast 1 argument");
