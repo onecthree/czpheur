@@ -15,8 +15,6 @@
 #define CONTAINER_CLASS_NAME_SRC "Zpheur\\Dependencies\\ServiceLocator\\Container"
 #define CONTAINER_CLASS_NAME_LEN sizeof(CONTAINER_CLASS_NAME_SRC) - 1
 
-void placeholder( char const *src, HashTable *ht_tmp );
-
 
 zend_class_entry* zpheur_dependencies_servicelocator_container_class_entry;
 

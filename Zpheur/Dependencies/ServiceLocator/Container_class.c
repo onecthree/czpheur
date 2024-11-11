@@ -5,91 +5,13 @@
 #include <string.h>
 #include <zpheur.h>
 #include <include/runtime.h>
+#include <include/onecstr.h>
 #include "Container_arginfo.h"
 
-
-void placeholder( char const *src, HashTable *ht_tmp )
-{
-    int src_len = 0;
-    char c;
-
-    bool CHAR_SKIP = false;
-
-    int buffer_size = 2;
-    int buffer_len = 0;
-    char *buffer = malloc(buffer_size);
-
-    char left[1024];
-    char right[1024];
-
-    int SIDE_MODE = LEFT;
-
-    while( true )
-    {
-        c = src[src_len];
-
-        if( c == '\\' )
-        {
-            ++src_len;
-            CHAR_SKIP = true;
-            continue;
-        }
-
-        if( CHAR_SKIP == false && SIDE_MODE == LEFT && c == '=' )
-        {
-            buffer[buffer_len] = '\0';
-            strncpy(left, buffer, sizeof left);
-            memset(buffer, 0, sizeof(buffer));
-            buffer_size = 2;
-            buffer_len = 0;
-            SIDE_MODE = RIGHT;
-            ++src_len;
-            continue;
-        }
-
-        if( CHAR_SKIP == false && SIDE_MODE == RIGHT && (c == ' ' || c == '\0') )
-        {
-            buffer[buffer_len] = '\0';
-            strncpy(right, buffer, sizeof right);
-
-            zval z_right;
-            ZVAL_STRING(&z_right, right);
-            zend_hash_str_update(ht_tmp, left, strlen(left), &z_right);
-            
-            memset(buffer, 0, sizeof(buffer));
-            buffer_size = 2;
-            buffer_len = 0;
-            SIDE_MODE = LEFT;
-            ++src_len;
-            continue;
-        }
-
-        if( buffer_len >= buffer_size )
-        {
-            buffer_size = buffer_size * 2;
-            buffer = realloc(buffer, buffer_size);
-            
-        }
-
-        buffer[buffer_len] = c;
-
-        ++buffer_len;
-        ++src_len;
-        CHAR_SKIP = false;
-
-        if( c == '\0' )
-        {
-            break;
-        }
-    }
-}
 
 PHP_METHOD(Container, __construct)
 {
     ZEND_PARSE_PARAMETERS_NONE();
-
-    // zpheur_globals.CONTAINER = (*getThis());
-
 
     zval classes_container;
     zval scalars_container;
