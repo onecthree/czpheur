@@ -1,13 +1,16 @@
 
+// #include <ext/standard/md5.h>
+// #include <openssl/md5.h>
+
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
+#include <Zend/zend_types.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
-// #include <ext/standard/md5.h>
-
 #include "string.h"
-
-// #include <openssl/md5.h>
 
 // char* md5_file_sum( char const* filename )
 // {
@@ -59,49 +62,20 @@
 //     return retval;
 // }
 
-char* substr(const char *src, int m, int n)
+unsigned long inline __attribute__ ((always_inline))
+string_to_digits( char* source_src, size_t source_len, size_t limit )
 {
-    int len = n - m;
- 
-    char *dest = (char*)malloc(sizeof(char) * (len + 1));
- 
-    for (int i = m; i < n && (*(src + i) != '\0'); i++)
-    {
-        *dest = *(src + i);
-        dest++;
-    }
- 
-    *dest = '\0';
- 
-    return dest - len;
-}
-
-unsigned long str_to_repnum( char* source_src, size_t source_len, size_t limit )
-{
-    long   repnum = 0; 
+    unsigned long repnum = 0; 
     size_t index = 0;
-    while( index < source_len )
+
+    for( ;index < source_len; index++ )
     {
-        int c = (int)source_src[index];
+        int c = (int)(source_src[index]);
+        repnum *= c > 99 ? 1000 : c > 9 ? 100 : 10;
+        repnum += c;
 
         if( repnum > limit )
             return 0;
-
-        if( c > 99 )
-        {
-            repnum *= 1000;
-        }
-        else if( c > 9 )
-        {
-            repnum *= 100;
-        }
-        else
-        {
-            repnum *= 10;
-        }
-
-        repnum += c;
-        index += 1;
     }
 
     return repnum;
