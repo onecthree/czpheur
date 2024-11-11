@@ -11,8 +11,6 @@
 
 #define MAX_SAFE_PCRE2_UCHAR_LENGTH 1024
 
-static size_t _regexp_strlen( PCRE2_UCHAR* foo );
-
 bool regexp_match(
 	unsigned char* const 	pattern_src,
 	size_t 					pattern_size,
