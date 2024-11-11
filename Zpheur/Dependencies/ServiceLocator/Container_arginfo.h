@@ -10,8 +10,6 @@
 #include "zend_exceptions.h"
 
 
-#define LEFT 0
-#define RIGHT 1
 #define CONTAINER_CLASS_NAME_SRC "Zpheur\\Dependencies\\ServiceLocator\\Container"
 #define CONTAINER_CLASS_NAME_LEN sizeof(CONTAINER_CLASS_NAME_SRC) - 1
 
