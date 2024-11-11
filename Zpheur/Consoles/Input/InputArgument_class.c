@@ -67,21 +67,25 @@ PHP_METHOD(InputArgument, shiftArgument)
 {
 	ZEND_PARSE_PARAMETERS_NONE();
 
+	zval shifted_argc, shifted_argv; 
 	zval* count = zend_this_read_property("count");
-	zval* value = zend_this_read_property("value");
+	zval* argv = zend_this_read_property("value");
 
-	zend_ulong decrement_count = zval_get_long(count) - 1;
-	ARRAY_SHIFT(value);
+	int shift = 0;
+	array_init(&shifted_argv);
+	ZEND_HASH_FOREACH_VAL(Z_ARR_P(argv), zval* value)
+	{
+		if(! shift ) {
+			shift = 1; continue;
+		}
 
-	zval new_count;
-	ZVAL_LONG(&new_count, decrement_count);
-	zend_this_update_property("count", &new_count);
-	// zval* 
-	// ZEND_HASH_FOREACH_NUM_KEY_VAL(Z_ARR_P(value), zend_ulong index, zval* item)
-	// {
+		add_next_index_zval(&shifted_argv, value);
+	}
+	ZEND_HASH_FOREACH_END();
 
-	// }
-	// ZEND_HASH_FOREACH_END();
+	ZVAL_LONG(&shifted_argc, zval_get_long(count) - 1);
+	zend_this_update_property("count", &shifted_argc);
+	zend_this_update_property("value", &shifted_argv);
 }
 
 ZEND_MINIT_FUNCTION(Zpheur_Consoles_Input_InputArgument)
