@@ -455,7 +455,7 @@ PHP_METHOD(Route, tryVerbFromString)
     ZEND_PARSE_PARAMETERS_END();
 
     unsigned long http_verb_repnum =
-        str_to_repnum(http_verb_src, http_verb_len, LOCALVERB_OPTIONS);
+        string_to_digits(http_verb_src, http_verb_len, LOCALVERB_OPTIONS);
 
     switch( http_verb_repnum )
     {
