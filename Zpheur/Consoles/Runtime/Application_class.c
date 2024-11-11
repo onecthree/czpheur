@@ -427,16 +427,10 @@ PHP_METHOD(Application, run)
 
 		    		if( (zpi_property->flags & ZEND_ACC_PROTECTED) )
 		    		{
-		    			char property_name_src[zpi_property->name->len - 2];
-		    			zend_ulong property_name_len = 0;
-		    			zend_ulong target_len = 3;
-
-		    			while( target_len < zpi_property->name->len )
-		    			{
-		    				property_name_src[property_name_len] = zpi_property->name->val[target_len];
-		    				target_len += 1; property_name_len += 1;
-		    			}
-		    			property_name_src[property_name_len] = '\0';
+		    			// Set offset begin to fetch actual string content
+		    			// Protected need (2)
+		    			char* 	property_name_src = zpi_property->name->val + 3;
+		    			size_t  property_name_len = zpi_property->name->len - 3;
 
 		    			if( zend_string_equals_cstr(prop_name, property_name_src, property_name_len) )
 		    			{
@@ -451,16 +445,10 @@ PHP_METHOD(Application, run)
 
 		    		if( (zpi_property->flags & ZEND_ACC_PRIVATE) )
 		    		{
-		    			char property_name_src[zpi_property->name->len - (middleware_class->ce->name->len + 1)];
-		    			zend_ulong property_name_len = 0;
-		    			zend_ulong target_len = (middleware_class->ce->name->len + 2);
-
-		    			while( target_len < zpi_property->name->len )
-		    			{
-		    				property_name_src[property_name_len] = zpi_property->name->val[target_len];
-		    				target_len += 1; property_name_len += 1;
-		    			}
-		    			property_name_src[property_name_len] = '\0';
+		    			// Set offset begin to fetch actual string content
+		    			// Private need (class name length) + (2)
+		    			char* 	property_name_src = zpi_property->name->val + (middleware_class_name->len + 2);
+		    			size_t  property_name_len = zpi_property->name->len - (middleware_class_name->len + 2);
 
 		    			if( zend_string_equals_cstr(prop_name, property_name_src, property_name_len) )
 		    			{
