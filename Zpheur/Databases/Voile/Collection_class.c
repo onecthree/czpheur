@@ -75,19 +75,24 @@ static int voile_cursor_to_collection_apply( zend_object_iterator* iter, void* p
                 break;
                 case 1: // AString
                 {
-                    zval *typelist = zend_hash_find_ind(Z_ARR_P(typelist_field), name);
-                    char* enum_name = NULL;
+                    zval* typelist = zend_hash_find_ind(Z_ARR_P(typelist_field), name);
+                    char* enum_name_src = NULL;
+                    size_t enum_name_len = 0;
 
                     zend_string* zs_typelist = zval_get_string(typelist);
 
-                    if( regexp_match_result(
-                            (unsigned char*)"(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)", 
-                            sizeof("(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)") - 1,
-                            (unsigned char*)zs_typelist->val,
-                            zs_typelist->len,
-                            &enum_name) == true )
+                    // if( regexp_match_result(
+                    //         (unsigned char*)"", 
+                    //         sizeof("(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)") - 1,
+                    //         (unsigned char*)zs_typelist->val,
+                    //         zs_typelist->len,
+                    //         &enum_name) == true )
+                    // Pattern: /(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)/
+                    unsigned char* const pattern_src = (unsigned char*)"(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)";
+                    size_t pattern_len = sizeof("(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)") - 1;
+                    if( regexp_match_result(pattern_src, pattern_len, (unsigned char*)zs_typelist->val, zs_typelist->len, &enum_name_src, &enum_name_len) )
                     {
-                        zend_class_entry *enum_ce = php_enum_init(enum_name);
+                        zend_class_entry *enum_ce = php_enum_init(enum_name_src);
 
                         if( !enum_ce || (enum_ce->ce_flags & ZEND_ACC_ENUM) != ZEND_ACC_ENUM || Z_TYPE_P(value) != IS_STRING ) 
                         {
@@ -104,18 +109,23 @@ static int voile_cursor_to_collection_apply( zend_object_iterator* iter, void* p
                 case 2: // ANumber
                 {
                     zval* typelist = zend_hash_find_ind(Z_ARR_P(typelist_field), name);
-                    char* enum_name = NULL;
+                    char* enum_name_src = NULL;
+                    size_t enum_name_len = 0;
 
                     zend_string* zs_typelist = zval_get_string(typelist);
 
-                    if( regexp_match_result(
-                            (unsigned char*)"(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)", 
-                            sizeof("(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)") - 1,
-                            (unsigned char*)zs_typelist->val,
-                            zs_typelist->len,
-                            &enum_name) == true )
+                    // if( regexp_match_result(
+                    //         (unsigned char*)"", 
+                    //         sizeof("(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)") - 1,
+                    //         (unsigned char*)zs_typelist->val,
+                    //         zs_typelist->len,
+                    //         &enum_name) == true )
+                    // Pattern: /(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)/
+                    unsigned char* const pattern_src = (unsigned char*)"(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)";
+                    size_t pattern_len = sizeof("(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)") - 1;
+                    if( regexp_match_result(pattern_src, pattern_len, (unsigned char*)zs_typelist->val, zs_typelist->len, &enum_name_src, &enum_name_len) )
                     {
-                        zend_class_entry *enum_ce = php_enum_init(enum_name);
+                        zend_class_entry *enum_ce = php_enum_init(enum_name_src);
 
                         if( !enum_ce || (enum_ce->ce_flags & ZEND_ACC_ENUM) != ZEND_ACC_ENUM || Z_TYPE_P(value) != IS_LONG ) 
                         {
