@@ -1,10 +1,13 @@
 # Zpheur
-> Used only for non-production (untested and unstable releases)
+> The project are unstable, do it at your own risk
  
 Zpheur is a web framework for PHP written in C delivered as extension. It includes router, middleware, dependency injection, dotenv loader, and more. Aims for a minimalist project structure without bloat-installed Composer package.
 
+## Project Status
+This project is under prototyping stuff and currently is not available for the stage of stable version. For the security concern is recommended to update the extension in your project every new commits. The testing of the extension are in my projects usage for now. So, if given such ```segmentation faults``` error in PHP land or other improvent/security needed, I usually just do debugging and fixes.
+
 ## Installation
-> Extension development is on Ubuntu 20.04; other GNU/Linux distributions or operating systems are not supported
+> Extension development is on Ubuntu 20.04; other platform are not tested yet
 
 Requirement:
 - PHP 8.2.0 or greater
@@ -54,5 +57,5 @@ $ sudo ln -s /etc/php/8.x/mods-available/zpheur.ini /etc/php/8.x/fpm/conf.d/22-z
 # If you're running PHP-FPM, you may need to restart php8.x-fpm to load the extension
 ```
 For other PHP installations, the configuration may be different.
-## Basic Usage
+## Usage
 For usage and documentation, see [Zpheur skeleton application](https://github.com/onecthree/zpheur) for more info.
