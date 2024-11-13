@@ -62,8 +62,8 @@
 //     return retval;
 // }
 
-unsigned long inline __attribute__ ((always_inline))
-string_to_digits( char* source_src, size_t source_len, size_t limit )
+// Don't inline the function; it's stored in virtue symbol_table
+unsigned long string_to_digits( char* source_src, size_t source_len, size_t limit )
 {
     unsigned long repnum = 0; 
     size_t index = 0;
