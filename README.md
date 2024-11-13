@@ -9,12 +9,12 @@ Zpheur is a web framework for PHP written in C delivered as extension. It includ
 Requirement:
 - PHP 8.2.0 or greater
 - openssl
-- libpcre3
+- pcre2
 
 For installing the library:
 ```bash
 # Ubuntu
-$ sudo apt install openssl libpcre3 -y
+$ sudo apt install libssl-dev libpcre2-dev -y
 ```
 The extension itself needs other extensions to run each feature (optional):
 ```bash
