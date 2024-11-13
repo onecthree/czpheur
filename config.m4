@@ -4,7 +4,7 @@ PHP_ARG_ENABLE([zpheur],
     [Enable zpheur support])],
   [no])
 
-TARGET_CFLAG="-fcommon -lpcre-2-8"
+TARGET_CFLAG="-fcommon -lpcre2-8"
 
 if test "$PHP_ZPHEUR" != "no"; then
   dnl AC_DEFINE(HAVE_ZPHEUR, 1, [ Have zpheur support ])
@@ -37,19 +37,21 @@ if test "$PHP_ZPHEUR" != "no"; then
     fi
 
   AC_MSG_CHECKING([for PCRE2])
-    pcre2_version=`pcre2-config --version`
+    pcre2_version=`ls /usr/include/ | grep pcre2.h`
     if test -z "$pcre2_version"; then
       AC_MSG_ERROR([require PCRE2 for the extension])
     else
-      AC_MSG_RESULT([$pcre2_version, ok])
+      dnl AC_MSG_RESULT([$pcre2_version, ok])
+      AC_MSG_RESULT([ found, ok ])
     fi
 
   AC_MSG_CHECKING([for OpenSSL])
-    openssl_version=`openssl version`
-    if test -z "$pcre2_version"; then
+    openssl_version=`ls /usr/include/openssl/ | grep ssl.h`
+    if test -z "$openssl_version"; then
       AC_MSG_ERROR([require OpenSSL for the extension])
     else
-      AC_MSG_RESULT([$openssl_version, ok])
+      dnl AC_MSG_RESULT([$openssl_version, ok])
+      AC_MSG_RESULT([ found, ok ])
     fi
 
   AC_MSG_CHECKING([for PHP MongoDB extension])
