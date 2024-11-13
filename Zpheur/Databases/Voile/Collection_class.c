@@ -81,6 +81,7 @@ static int voile_cursor_to_collection_apply( zend_object_iterator* iter, void* p
 
                     zend_string* zs_typelist = zval_get_string(typelist);
 
+                    // TODO: improve/delete regexp
                     // if( regexp_match_result(
                     //         (unsigned char*)"", 
                     //         sizeof("(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)") - 1,
@@ -114,6 +115,7 @@ static int voile_cursor_to_collection_apply( zend_object_iterator* iter, void* p
 
                     zend_string* zs_typelist = zval_get_string(typelist);
 
+                    // TODO: improve/delete regexp
                     // if( regexp_match_result(
                     //         (unsigned char*)"", 
                     //         sizeof("(?<=\\|).*Domain\\\\Enum\\\\Model\\\\.*.*(?=\\|)") - 1,
