@@ -75,6 +75,8 @@ if test "$PHP_ZPHEUR" != "no"; then
                                                                         \
       Zpheur/Actions/Console/DefaultAction_class.c                      \
       Zpheur/Actions/Http/DefaultAction_class.c                         \
+      Zpheur/Actions/Middleware/Next_class.c                            \
+      Zpheur/Actions/Middleware_class.c                                 \
       Zpheur/Actions/Reflection/ActionResolver_class.c                  \
       Zpheur/Actions/Reflection/ArgumentResolver_class.c                \
       Zpheur/Caches/Adapter/Filesystem/ItemTagHandler_class.c           \
@@ -92,8 +94,6 @@ if test "$PHP_ZPHEUR" != "no"; then
       Zpheur/Schemes/Http/Message/HeaderInterface_class.c               \
       Zpheur/Schemes/Http/Message/HeaderTrait_class.c                   \
       Zpheur/Schemes/Http/Message/Response_class.c                      \
-      Zpheur/Schemes/Http/Middleware/Next_class.c                       \
-      Zpheur/Schemes/Http/Middleware_class.c                            \
       Zpheur/Schemes/Http/Responder/ErrorRequest_class.c                \
       Zpheur/Schemes/Http/Routing/Dispatcher/DispatchItem_class.c       \
       Zpheur/Schemes/Http/Routing/Dispatcher_class.c                    \

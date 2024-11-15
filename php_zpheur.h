@@ -51,7 +51,11 @@ ZEND_FUNCTION(zpheur_version);
 
 
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Console_DefaultAction);
+
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Http_DefaultAction);
+ZEND_MINIT_FUNCTION(Zpheur_Actions_Middleware_Next);
+ZEND_MINIT_FUNCTION(Zpheur_Actions_Middleware);
+
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Reflection_ActionResolver);
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Reflection_ArgumentResolver);
 
@@ -74,9 +78,6 @@ ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Foundation_ServerBag);
 ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Message_HeaderInterface);
 ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Message_HeaderTrait);
 ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Message_Response);
-
-ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Middleware_Next);
-ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Middleware);
 
 ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Responder_ErrorRequest);
 

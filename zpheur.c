@@ -111,7 +111,11 @@ static PHP_MINIT_FUNCTION(zpheur)
 
 
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Console_DefaultAction)(INIT_FUNC_ARGS_PASSTHRU);
+  	
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Http_DefaultAction)(INIT_FUNC_ARGS_PASSTHRU);
+	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Middleware_Next)(INIT_FUNC_ARGS_PASSTHRU);
+	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Middleware)(INIT_FUNC_ARGS_PASSTHRU);
+
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Reflection_ActionResolver)(INIT_FUNC_ARGS_PASSTHRU);
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Reflection_ArgumentResolver)(INIT_FUNC_ARGS_PASSTHRU);
 
@@ -134,9 +138,6 @@ static PHP_MINIT_FUNCTION(zpheur)
 	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Message_HeaderInterface)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Message_HeaderTrait)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Message_Response)(INIT_FUNC_ARGS_PASSTHRU);
-
-	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Middleware_Next)(INIT_FUNC_ARGS_PASSTHRU);
-	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Middleware)(INIT_FUNC_ARGS_PASSTHRU);
 
 	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Responder_ErrorRequest)(INIT_FUNC_ARGS_PASSTHRU);
 
