@@ -73,6 +73,7 @@ if test "$PHP_ZPHEUR" != "no"; then
       Zpheur/Functions/filetoclass_function.c                           \
       Zpheur/Functions/zpheur_version_function.c                        \
                                                                         \
+      Zpheur/Actions/Console/DefaultAction_class.c                      \
       Zpheur/Actions/Http/DefaultAction_class.c                         \
       Zpheur/Actions/Reflection/ActionResolver_class.c                  \
       Zpheur/Actions/Reflection/ArgumentResolver_class.c                \

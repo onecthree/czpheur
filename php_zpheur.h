@@ -50,6 +50,7 @@ ZEND_FUNCTION(csrf_token);
 ZEND_FUNCTION(zpheur_version);
 
 
+ZEND_MINIT_FUNCTION(Zpheur_Actions_Console_DefaultAction);
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Http_DefaultAction);
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Reflection_ActionResolver);
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Reflection_ArgumentResolver);
