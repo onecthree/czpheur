@@ -10,11 +10,32 @@
 
 PHP_METHOD(ArgumentResolver, __construct)
 {
-    zval*   container;
+    zval* container = NULL;
+    zend_uchar type;
+    zend_string* class_name;
 
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_ZVAL(container);
     ZEND_PARSE_PARAMETERS_END();
+
+
+    type = Z_TYPE_P(container);
+    if( !container || type != IS_OBJECT )
+    {
+        php_error_docref(NULL, E_ERROR,
+            "Argument #1 ($container) must be of type object, %s given",
+            ZTYPE_TO_STR(type)
+        );
+    }
+
+    class_name = Z_OBJ_P(container)->ce->name;
+    if( !zend_string_equals_literal(class_name, "Zpheur\\Dependencies\\ServiceLocator\\Container") )
+    {
+        php_error_docref(NULL, E_ERROR,
+            "Argument #1 ($container) must be instance of Zpheur\\Dependencies\\ServiceLocator\\Container, %s given",
+            zstr_cstr(class_name)
+        );
+    }
 
     zend_this_update_property("container", container);
 }

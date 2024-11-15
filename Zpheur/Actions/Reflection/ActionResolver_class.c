@@ -10,11 +10,31 @@
 
 PHP_METHOD(ActionResolver, __construct)
 {
-	zval*	middleware;
+	zend_uchar type;
+	zend_string* class_name;
+	zval* middleware = NULL;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
 		Z_PARAM_ZVAL(middleware)
-	ZEND_PARSE_PARAMETERS_END();	
+	ZEND_PARSE_PARAMETERS_END();
+
+	type = Z_TYPE_P(middleware);
+	if( !middleware || type != IS_OBJECT )
+	{
+		php_error_docref(NULL, E_ERROR,
+			"Argument #1 ($middleware) must be of type object, %s given",
+			ZTYPE_TO_STR(type)
+		);
+	}
+
+	class_name = Z_OBJ_P(middleware)->ce->name;
+	if(! zend_string_equals_literal(class_name, "Zpheur\\Actions\\Middleware") )
+	{
+		php_error_docref(NULL, E_ERROR,
+			"Argument #1 ($middleware) must be instance of Zpheur\\Actions\\Middleware, %s given",
+			zstr_cstr(class_name)
+		);
+	}
 
 	zend_this_update_property("middleware", middleware);
 }
