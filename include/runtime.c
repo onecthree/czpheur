@@ -45,6 +45,14 @@
 
 #include <Zend/zend_exceptions.h>
 
+inline __attribute__ ((always_inline))
+char* zstr_cstr( zend_string* string )
+{   
+    if(! string ) return "";
+    
+    string->val[string->len] = '\0';
+    return string->val;
+}
 
 zval* php_call_enum_method( zend_class_entry* ce, char* const function_name_src, size_t function_name_len, zend_long param_counts, zval* params )
 {

@@ -31,6 +31,7 @@
 #define INCLUDE 2
 #define INCLUDE_ONCE 3
 
+char* zstr_cstr( zend_string* string );
 
 zval* php_call_enum_method(
     zend_class_entry*   ce,
