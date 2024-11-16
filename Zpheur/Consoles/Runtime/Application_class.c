@@ -596,6 +596,96 @@ PHP_METHOD(Application, run)
 	}
 }
 
+PHP_METHOD(Application, terminate)
+{
+	zval*	 error_exception = NULL;
+	char*    class_name_src = NULL;
+	size_t   class_name_len = 0;
+	char*    class_method_src = NULL;
+	size_t   class_method_len = 0;
+
+	ZEND_PARSE_PARAMETERS_START(3, 3)
+		Z_PARAM_ZVAL(error_exception)
+		Z_PARAM_STRING(class_name_src, class_name_len)
+		Z_PARAM_STRING(class_method_src, class_method_len)
+	ZEND_PARSE_PARAMETERS_END();
+
+	zval* 			argument_resolver = zend_this_read_property("argument_resolver");
+	zend_object*	class_action = php_class_init(class_name_src, class_name_len);
+	zval* 			return_action;
+
+	/* Call action constructor */
+	{
+		zval* params_getTargetParameter = (zval*)safe_emalloc(2, sizeof(zval), 0);
+		ZVAL_STRINGL(&params_getTargetParameter[0], class_name_src, class_name_len);
+		ZVAL_STRINGL(&params_getTargetParameter[1], "__construct", sizeof("__construct") - 1);
+
+		zval* method_action_param_src = php_class_call_method(Z_OBJ_P(argument_resolver), "getTargetParameter", sizeof("getTargetParameter") - 1, 2, params_getTargetParameter, 0);
+
+		if( Z_TYPE_P(method_action_param_src) != IS_NULL )
+		{
+			zend_ulong 	method_action_param_len = zend_hash_num_elements(Z_ARR_P(method_action_param_src));
+			zval* 		middleware_params_resolve = (zval*)safe_emalloc(method_action_param_len, sizeof(zval), 0);
+
+			for( int i = 0; i < method_action_param_len; i += 1)
+			{
+				ZVAL_ZVAL(&middleware_params_resolve[i], zend_hash_index_find(Z_ARR_P(method_action_param_src), i), 0, 0);
+				ZVAL_MAKE_REF(&middleware_params_resolve[i]);
+			}
+
+			// Construct no return value
+			php_class_call_constructor(class_action, method_action_param_len, middleware_params_resolve);	
+		}
+		else
+			zval_ptr_dtor(method_action_param_src);
+		zval_ptr_dtor(params_getTargetParameter);
+	}
+
+	if( EG(exception) )
+    { 
+        goto early_disturb;
+    }
+
+	/* Call action method */
+	{
+		/* Set segments from uri to container */
+		// zval* segments = zend_hash_str_find(Z_ARR_P(dispatched), "segments", sizeof("segments") - 1);
+		zval segments;
+		array_init(&segments);
+
+		zval* params_withTargetSegments = (zval*)safe_emalloc(1, sizeof(zval), 0);
+		ZVAL_ZVAL(&params_withTargetSegments[0], &segments, 1, 0);
+
+		/* Call segment resolver */
+		php_class_call_method(Z_OBJ_P(argument_resolver), "withTargetSegments", sizeof("withTargetSegments") - 1, 1, params_withTargetSegments, 0);
+
+		zval* params_getTargetParameter = (zval*)safe_emalloc(2, sizeof(zval), 0);
+		ZVAL_STRINGL(&params_getTargetParameter[0], class_name_src, class_name_len);
+		ZVAL_STRINGL(&params_getTargetParameter[1], class_method_src, class_method_len);
+
+
+		zval* method_action_param_src = php_class_call_method(Z_OBJ_P(argument_resolver), "getTargetParameter", sizeof("getTargetParameter") - 1, 2, params_getTargetParameter, 0);
+
+		zend_ulong 		method_action_param_len = zend_hash_num_elements(Z_ARR_P(method_action_param_src));
+		zval* 			middleware_params_resolve = (zval*)safe_emalloc(method_action_param_len, sizeof(zval), 0);
+
+		for( int i = 0; i < method_action_param_len; i += 1)
+		{
+			ZVAL_ZVAL(&middleware_params_resolve[i], zend_hash_index_find(Z_ARR_P(method_action_param_src), i), 0, 0);
+			ZVAL_MAKE_REF(&middleware_params_resolve[i]);
+		}
+
+		// clean-up
+		zval_ptr_dtor(params_getTargetParameter);
+
+		// it should return zval ptr
+		return_action =
+			php_class_call_method(class_action, class_method_src, class_method_len, method_action_param_len, middleware_params_resolve, 0);
+	}
+
+	early_disturb:	
+		  RETURN_ZVAL(return_action, 1, 0);
+}
 
 ZEND_MINIT_FUNCTION(Zpheur_Consoles_Runtime_Application)
 {	

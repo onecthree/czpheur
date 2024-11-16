@@ -28,18 +28,26 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Application_withBaseNamespace_arginfo, 0
     ZEND_ARG_TYPE_INFO(0, baseNamespace, IS_STRING, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Application_terminate_arginfo, 0, 3, IS_MIXED, 0)
+    ZEND_ARG_TYPE_INFO(0, error_exception, IS_OBJECT, 0)
+    ZEND_ARG_TYPE_INFO(0, class_name, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, method_name, IS_STRING, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Application_run_arginfo, 0, 0, IS_MIXED, 0)
 ZEND_END_ARG_INFO()
 
 
 PHP_METHOD(Application, __construct);
 PHP_METHOD(Application, withBaseNamespace);
+PHP_METHOD(Application, terminate);
 PHP_METHOD(Application, run);
 
 
 static const zend_function_entry zpheur_consoles_runtime_application_class_method[] = {
     PHP_ME(Application, __construct, Application___construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     PHP_ME(Application, withBaseNamespace, Application_withBaseNamespace_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Application, terminate, Application_terminate_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Application, run, Application_run_arginfo, ZEND_ACC_PUBLIC)
 	ZEND_FE_END
 };
