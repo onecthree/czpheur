@@ -11,10 +11,32 @@
 #include <zend_exceptions.h>
 
 
-#define ATTR_NAMED_PARAM__DEFAULT   111229896
-#define ATTR_NAMED_PARAM__REQUIRED  1253587510
-#define ATTR_NAMED_PARAM__MIN       12060
-#define ATTR_NAMED_PARAM__MAX       11990
+#define ATTR_NAMED_PARAM__DEFAULT           111229896
+#define ATTR_NAMED_PARAM__REQUIRED          1253587510
+#define ATTR_NAMED_PARAM__MIN               12060
+#define ATTR_NAMED_PARAM__MAX               11990
+
+#define INP_CONSTANT_AOBJECTID              7399721430
+#define INP_CONSTANT_ASTRING                74585703
+#define INP_CONSTANT_ANUMBER                74089924
+#define INP_CONSTANT_ABOOLEAN               728329180
+#define INP_CONSTANT_ADATETIME              7289705691
+#define INP_CONSTANT_AARRAY                 7276491
+#define INP_CONSTANT_AOBJECT                73997206
+#define INP_CONSTANT_ADECIMAL128            729206983456
+
+#define INP_CONSTANT_RIGHT_OBJECTID         899721430
+#define INP_CONSTANT_RIGHT_STRING           12785703
+#define INP_CONSTANT_RIGHT_INT              11716
+#define INP_CONSTANT_RIGHT_BOOL             110318
+#define INP_CONSTANT_RIGHT_UTCDATETIME      941489705691
+#define INP_CONSTANT_RIGHT_ARRAY            1096491
+#define INP_CONSTANT_RIGHT_STDCLASS         1276788965
+#define INP_CONSTANT_RIGHT_DECIMAL128       79206983456
+
+#define INP_TOKEN_SYMBOL_BACKSLASH          '\\'
+#define INP_TOKEN_CHAR_EOF                  '\0'
+#define INP_TOKEN_SYMBOL_PIPE               '|'
 
 typedef enum {
     REF_TYPE_OTHER,      /* Must be 0 */
