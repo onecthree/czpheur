@@ -13,15 +13,6 @@
 #include "Model_arginfo.h"
 
 
-static zend_object* voile_model_constructor_init( zend_class_entry* target_model_ce )
-{
-    char*        model_classname_src = target_model_ce->name->val;
-    size_t       model_classname_len = target_model_ce->name->len;
-    zend_object* model_class = php_class_init(model_classname_src, model_classname_len);
-
-    return model_class;
-}
-
 #define INP_CONSTANT_AOBJECTID              7399721430
 #define INP_CONSTANT_ASTRING                74585703
 #define INP_CONSTANT_ANUMBER                74089924
@@ -44,7 +35,18 @@ static zend_object* voile_model_constructor_init( zend_class_entry* target_model
 #define INP_TOKEN_CHAR_EOF                  '\0'
 #define INP_TOKEN_SYMBOL_PIPE               '|'
 
-static inline zend_ulong field_type_finder( zend_string* type_str_field_zs, zend_property_info* zpi_property, char* property_name, zend_object* model_class )
+static inline zend_object* __attribute__ ((always_inline))
+voile_model_constructor_init( zend_class_entry* target_model_ce )
+{
+    char*        model_classname_src = target_model_ce->name->val;
+    size_t       model_classname_len = target_model_ce->name->len;
+    zend_object* model_class = php_class_init(model_classname_src, model_classname_len);
+
+    return model_class;
+}
+
+static inline zend_ulong __attribute__ ((always_inline))
+field_type_finder( zend_string* type_str_field_zs, zend_property_info* zpi_property, char* property_name, zend_object* model_class )
 {
     zend_ulong      target_field_type = 99;
     unsigned long   input_constant = 0;
@@ -205,7 +207,8 @@ static inline zend_ulong field_type_finder( zend_string* type_str_field_zs, zend
 }
 
 #define FIELD_NAMESPACE "Zpheur\\Databases\\Voile\\Schema\\Field"
-static inline voile_model_typeinfo* voile_parse_model_typeinfo( zend_object* model_class )
+static inline voile_model_typeinfo* __attribute__ ((always_inline))
+voile_parse_model_typeinfo( zend_object* model_class )
 {
     HashTable *typelist;
     ALLOC_HASHTABLE(typelist); // HtStack for type list per field/property
@@ -220,7 +223,6 @@ static inline voile_model_typeinfo* voile_parse_model_typeinfo( zend_object* mod
     zend_hash_init(attributes_argument, 0, NULL, ZVAL_PTR_DTOR, 0);
 
     /**
-     * 
      *  All property must be protected modifier
      */
     zend_ulong property_counts = model_class->ce->default_properties_count;
