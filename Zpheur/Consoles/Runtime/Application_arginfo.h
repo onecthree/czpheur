@@ -13,8 +13,8 @@
 #include <include/onecstr.h>
 
 
-static int console_class_method_parser( char* base_namespace, zend_string* target_action_class, onec_string** target_class, onec_string** target_method );
-static int console_subns_class_method_parser( char* base_namespace, zend_string* target_action_class, onec_string** target_class );
+static int console_class_method_parser( char* base_namespace, zend_string* target_action_class, onec_stringlc* target_class, onec_stringlc* target_method );
+static int console_subns_class_method_parser( char* base_namespace, zend_string* target_action_class, onec_stringlc* target_class );
 
 zend_class_entry* zpheur_consoles_runtime_application_class_entry;
 
@@ -28,8 +28,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Application_withBaseNamespace_arginfo, 0
     ZEND_ARG_TYPE_INFO(0, baseNamespace, IS_STRING, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Application_terminate_arginfo, 0, 3, IS_MIXED, 0)
-    ZEND_ARG_TYPE_INFO(0, error_exception, IS_OBJECT, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Application_terminate_arginfo, 0, 2, IS_MIXED, 0)
     ZEND_ARG_TYPE_INFO(0, class_name, IS_STRING, 0)
     ZEND_ARG_TYPE_INFO(0, method_name, IS_STRING, 0)
 ZEND_END_ARG_INFO()

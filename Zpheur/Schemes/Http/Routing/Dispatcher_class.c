@@ -22,11 +22,11 @@ PHP_METHOD(RoutingDispatcher, __construct)
 
 PHP_METHOD(RoutingDispatcher, dispatch)
 {
-    char*   http_method_src = NULL;
-    size_t  http_method_len = 0;
+    char* http_method_src = NULL;
+    size_t http_method_len = 0;
 
-    char*   http_uri_src = NULL;
-    size_t  http_uri_len = 0;
+    char* http_uri_src = NULL;
+    size_t http_uri_len = 0;
 
     ZEND_PARSE_PARAMETERS_START(2, 2)
         Z_PARAM_STRING(http_method_src, http_method_len)
@@ -49,7 +49,7 @@ PHP_METHOD(RoutingDispatcher, dispatch)
 
     HashTable *context_dispatched;
     ALLOC_HASHTABLE(context_dispatched);
-    zend_hash_init(context_dispatched, 0, NULL, ZVAL_PTR_DTOR, 0);
+    zend_hash_init(context_dispatched, 4, NULL, ZVAL_PTR_DTOR, 0);
 
     // Stack init
     furouter_fund route_fund = {
@@ -57,9 +57,6 @@ PHP_METHOD(RoutingDispatcher, dispatch)
         .method_name = zend_string_init_fast("", 0),
         .order = -1,
     };
-
-    onec_string* path_value;
-    onec_string_init(path_value);
 
     furouter_target_uri     target_uri_src[TARGET_URI_MAX_LENGTH_AS_REV];
     size_t                  target_uri_len = TARGET_URI_MAX_LENGTH_AS_REV;
@@ -83,13 +80,13 @@ PHP_METHOD(RoutingDispatcher, dispatch)
 
             break;
         }
-
-        onec_string_reset(path_value);
     }
     ZEND_HASH_FOREACH_END();
 
     target_uri_max_length:
-    onec_string_release(path_value);
+
+    for( int i = 0; i < target_uri_len; i++ )
+        free(target_uri_src[i].val);
 
     zval order, class_src, method_src, segment_src;
 
@@ -98,18 +95,10 @@ PHP_METHOD(RoutingDispatcher, dispatch)
     ZVAL_STRINGL(&method_src, route_fund.method_name->val, route_fund.method_name->len);
     ZVAL_ARR(&segment_src, segments);
 
-    zend_hash_update_ind(
-        context_dispatched, zend_string_init("order", sizeof("order") - 1, 0), &order
-    );
-    zend_hash_update_ind(
-        context_dispatched, zend_string_init("class", sizeof("class") - 1, 0), &class_src
-    );
-    zend_hash_update_ind(
-        context_dispatched, zend_string_init("method", sizeof("method") - 1, 0), &method_src
-    );
-    zend_hash_update_ind(
-        context_dispatched, zend_string_init("segments", sizeof("segments") - 1, 0), &segment_src
-    );
+    zend_hash_str_update(context_dispatched, "order", sizeof("order") - 1, &order);
+    zend_hash_str_update(context_dispatched, "class", sizeof("class") - 1, &class_src);
+    zend_hash_str_update(context_dispatched, "method", sizeof("method") - 1, &method_src);
+    zend_hash_str_update(context_dispatched, "segments", sizeof("segments") - 1, &segment_src);
 
     zend_string_release(route_fund.class_name);
     zend_string_release(route_fund.method_name);

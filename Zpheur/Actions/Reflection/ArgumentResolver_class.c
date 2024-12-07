@@ -6,7 +6,50 @@
 #include <include/runtime.h>
 #include <zpheur.h>
 #include "ArgumentResolver_arginfo.h"
+#include <Zpheur/Dependencies/ServiceLocator/Container_arginfo.h>
 
+zend_object_handlers argument_resolver_object_handlers;
+
+typedef struct _argument_resolver_common_t
+{
+    zend_object* container; // don't need release
+} argument_resolver_common_t;
+
+typedef struct _argument_resolver_object
+{
+    argument_resolver_common_t* common;
+    zend_object std;
+} argument_resolver_object;
+
+void free_argument_resolver_object(zend_object *object)
+{
+    argument_resolver_object* instance = ZPHEUR_GET_OBJECT(argument_resolver_object, object);
+
+    zend_object_std_dtor(&instance->std);
+    if( instance->common )
+    {
+        efree(instance->common);       
+    }
+}
+
+zend_object* create_argument_resolver_object( zend_class_entry* ce )
+{
+    argument_resolver_object* object = 
+        ecalloc(1, sizeof(argument_resolver_object) + zend_object_properties_size(ce));
+
+    zend_object_std_init(&object->std, ce);
+    object_properties_init(&object->std, ce);
+
+    memcpy(&argument_resolver_object_handlers, zend_get_std_object_handlers(), sizeof(argument_resolver_object_handlers));
+    argument_resolver_object_handlers.offset = XtOffsetOf(argument_resolver_object, std);
+    argument_resolver_object_handlers.free_obj = free_argument_resolver_object;
+    object->std.handlers = &argument_resolver_object_handlers;
+
+    object->common = emalloc(sizeof(argument_resolver_common_t));
+    object->common->container = NULL;
+
+    return &object->std;
+}
 
 PHP_METHOD(ArgumentResolver, __construct)
 {
@@ -15,33 +58,15 @@ PHP_METHOD(ArgumentResolver, __construct)
     zend_string* class_name;
 
     ZEND_PARSE_PARAMETERS_START(1, 1)
-        Z_PARAM_ZVAL(container);
+        Z_PARAM_OBJECT_OF_CLASS(container, zpheur_dependencies_servicelocator_container_class_entry)
     ZEND_PARSE_PARAMETERS_END();
 
-
-    type = Z_TYPE_P(container);
-    if( !container || type != IS_OBJECT )
-    {
-        php_error_docref(NULL, E_ERROR,
-            "Argument #1 ($container) must be of type object, %s given",
-            ZTYPE_TO_STR(type)
-        );
-    }
-
-    class_name = Z_OBJ_P(container)->ce->name;
-    if( !zend_string_equals_literal(class_name, "Zpheur\\Dependencies\\ServiceLocator\\Container") )
-    {
-        php_error_docref(NULL, E_ERROR,
-            "Argument #1 ($container) must be instance of Zpheur\\Dependencies\\ServiceLocator\\Container, %s given",
-            zstr_cstr(class_name)
-        );
-    }
-
-    zend_this_update_property("container", container);
+    argument_resolver_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(argument_resolver_object, getThis());
+    instance->common->container = Z_OBJ_P(container);
 }
 
-
-PHP_METHOD(ArgumentResolver, getTargetParameter)
+PHP_METHOD(ArgumentResolver, resolve)
 {
 	char*  	class_src = NULL;
 	size_t 	class_len = 0;
@@ -54,12 +79,16 @@ PHP_METHOD(ArgumentResolver, getTargetParameter)
 		Z_PARAM_STRING(method_src, method_len)
 	ZEND_PARSE_PARAMETERS_END();
 
-	zend_object* 	target_class = php_class_init(class_src, class_len);
-	zend_function* 	target_method;
-	bool            target_method_found = false;
+    argument_resolver_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(argument_resolver_object, getThis());
 
-    zval class_argument;
-    array_init(&class_argument);
+	zend_object* target_class =
+        php_class_init_silent(class_src, class_len);
+	zend_function* target_method = NULL;
+
+    HashTable* class_argument;
+    ALLOC_HASHTABLE(class_argument);
+    zend_hash_init(class_argument, 0, NULL, ZVAL_PTR_DTOR, 0);
 
 	ZEND_HASH_FOREACH_PTR(&target_class->ce->function_table, zend_function* value) 
 	{
@@ -69,83 +98,113 @@ PHP_METHOD(ArgumentResolver, getTargetParameter)
         if( is_public && name_equalied )
         {
             target_method = value;
-            target_method_found = true;
             break;
         }	
     } ZEND_HASH_FOREACH_END();
 
-    if(! target_method_found )
+
+    if( target_method == NULL )
+    {
+        // clean up
+        zend_hash_destroy(class_argument);
+        FREE_HASHTABLE(class_argument);
+        zend_object_release(target_class);
         RETURN_NULL();
+    }
 
     zend_arg_info*	args_src = target_method->common.arg_info;
-    int 			args_len = target_method->common.num_args;
+    int args_len = target_method->common.num_args;
 
     for( int arg_index = 0; arg_index < args_len; ++arg_index )
     {
-        zend_arg_info*		argument = &args_src[arg_index];
-        zend_string*		arg_type = zend_type_to_string(argument->type);
-        zend_string* 		arg_name = argument->name;
+        zend_arg_info* argument = &args_src[arg_index];
+        zend_string* arg_type = zend_type_to_string(argument->type);
+        // zend_string* arg_name = argument->name;
 
+        // if(! arg_type )
         if(! arg_type )
-        {
-            php_error_docref(NULL, E_ERROR, "Argument must has a type hint");
-        }
+            php_error_docref(NULL, E_ERROR, "argument must have type hint");
 
-        if( zend_string_equals_cstr(arg_type, "int", sizeof("int") - 1) ||
-            zend_string_equals_cstr(arg_type, "string", sizeof("string") - 1) ||
-            zend_string_equals_cstr(arg_type, "array", sizeof("array") - 1)
-            // zend_string_equals_cstr(arg_type, "object", sizeof("object") - 1)
-        )
+        // if( zend_string_equals_cstr(arg_type, "int", sizeof("int") - 1) ||
+        //     zend_string_equals_cstr(arg_type, "string", sizeof("string") - 1) ||
+        //     zend_string_equals_cstr(arg_type, "array", sizeof("array") - 1)
+        // )
+        zval copy;
+        if( ZEND_TYPE_FULL_MASK(argument->type) &
+            (MAY_BE_LONG | MAY_BE_STRING | MAY_BE_ARRAY) )
         {
-            zval _arg_name;
-            ZVAL_STR(&_arg_name, arg_name);
-            add_next_index_zval(&class_argument, &_arg_name);
+            ZVAL_STR(&copy, argument->name);
+            zend_hash_next_index_insert(class_argument, &copy);
         }
         else
         {
-            zval _arg_type;
-            ZVAL_STR(&_arg_type, arg_type);
-            add_next_index_zval(&class_argument, &_arg_type);
+            ZVAL_STR(&copy, arg_type);
+            zend_hash_next_index_insert(class_argument, &copy);
         }
+
+        // When clean'in up; may pontential to corrupt HashTable table contains
+        // zend_string_release(arg_type);
+        // zend_string_release(arg_name);
     }
+
+    zend_object_release(target_class);
 
     if( args_len )
     {
-        zval* container = zend_this_read_property("container");
-
-        zval *params = (zval*)safe_emalloc(1, sizeof(zval), 0);
-        ZVAL_ZVAL(&params[0], &class_argument, 1, 0);
+        zval* params_getService = (zval*)safe_emalloc(1, sizeof(zval), 0);
+        zval zv_class_argument; ZVAL_ARR(&zv_class_argument, class_argument);
+        params_getService[0] = zv_class_argument;
 
         zval* filled_argument =
-            php_class_call_method(Z_OBJ_P(container), "getOf", sizeof("getOf") - 1, 1, params, 0);
+            php_class_call_method(instance->common->container, 
+                "getService", sizeof("getService") - 1, 1, params_getService, 0);
+        efree(params_getService);
 
-        // RETURN_ZVAL(filled_argument, 1, 0);
-        RETURN_ZVAL(filled_argument, 0, 0);
+        zend_hash_destroy(class_argument);
+        FREE_HASHTABLE(class_argument);
+
+        HashTable* filled_argument_ref;
+        ALLOC_HASHTABLE(filled_argument_ref);
+        zend_hash_init(filled_argument_ref, 0, NULL, ZVAL_PTR_DTOR, 0);
+        zend_hash_copy(filled_argument_ref, Z_ARR_P(filled_argument), zval_add_ref);
+
+        zend_hash_destroy(Z_ARR_P(filled_argument));
+        FREE_HASHTABLE(Z_ARR_P(filled_argument));
+        efree(filled_argument);
+
+        RETURN_ARR(filled_argument_ref);
     }
 
-    RETURN_ARR(Z_ARR_P(&class_argument));
+    RETURN_ARR(class_argument);
 }
 
-PHP_METHOD(ArgumentResolver, withTargetSegments)
+PHP_METHOD(ArgumentResolver, addSegmentsToServicesContainer)
 {
-    zval* segments;
-        
+    HashTable* dispatch;
     ZEND_PARSE_PARAMETERS_START(1, 1)
-        Z_PARAM_ARRAY(segments)
+        Z_PARAM_ARRAY_HT(dispatch);
     ZEND_PARSE_PARAMETERS_END();
 
-    zval* container = zend_this_read_property("container");    
-
-    ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(segments), zend_string* name, zval* value)
+    zval* segments = zend_hash_str_find(dispatch, "segments", sizeof("segments") - 1);
+    zend_long segments_exists = zend_hash_num_elements(Z_ARR_P(segments));
+    if( segments_exists > 0 )
     {
-        zval* params_set = (zval*)safe_emalloc(3, sizeof(zval), 0);
-        ZVAL_STR(&params_set[0], name);
-        ZVAL_ZVAL(&params_set[1], value, 1, 0);
-        ZVAL_TRUE(&params_set[2]);
+        argument_resolver_object* instance = 
+            ZPHEUR_ZVAL_GET_OBJECT(argument_resolver_object, getThis());
+        zval* params_addServiceFromArray = safe_emalloc(1, sizeof(zval), 0);
+        params_addServiceFromArray[0] = *segments;
+        
+        zval* return_from = php_class_call_method(instance->common->container, 
+            "setScalarFromArray", sizeof("setScalarFromArray") - 1, 1, params_addServiceFromArray, 0);
 
-        php_class_call_method(Z_OBJ_P(container), "set", sizeof("set") - 1, 3, params_set, 0);
+        efree(params_addServiceFromArray);
+        efree(return_from);
     }
-    ZEND_HASH_FOREACH_END();
+}
+
+PHP_METHOD(ArgumentResolver, __destruct)
+{
+    zend_this_unset_property("container");
 }
 
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Reflection_ArgumentResolver)
@@ -154,7 +213,8 @@ ZEND_MINIT_FUNCTION(Zpheur_Actions_Reflection_ArgumentResolver)
 
     INIT_NS_CLASS_ENTRY(ce, "Zpheur\\Actions\\Reflection", "ArgumentResolver", zpheur_actions_reflection_argumentresolver_class_method);
     zpheur_actions_reflection_argumentresolver_class_entry = zend_register_internal_class(&ce);
-    zpheur_actions_reflection_argumentresolver_class_entry->ce_flags |= ZEND_ACC_ALLOW_DYNAMIC_PROPERTIES;
+    zpheur_actions_reflection_argumentresolver_class_entry->ce_flags |= ZEND_ACC_NO_DYNAMIC_PROPERTIES;
+    zpheur_actions_reflection_argumentresolver_class_entry->create_object = create_argument_resolver_object;
 
     return SUCCESS;
 }

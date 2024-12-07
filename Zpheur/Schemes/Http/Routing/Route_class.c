@@ -412,7 +412,6 @@ PHP_METHOD(Route, save)
                 switch( Z_TYPE_P(value) )
                 {
                     case IS_STRING:
-                        // php_var_dump(value, 0);
                         onec_string_append(middleware_serialized, 5, "                '", param->val, "' => '", Z_STRVAL_P(value), "',\n");
                     break;
                     case IS_LONG:

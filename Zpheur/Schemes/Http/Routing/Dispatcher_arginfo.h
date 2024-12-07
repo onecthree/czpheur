@@ -13,7 +13,7 @@
 zend_class_entry* zpheur_schemes_http_routing_dispatcher_class_entry;
 
 ZEND_BEGIN_ARG_INFO_EX(RoutingDispatcher___construct_arginfo, 0, 0, 1)
-    ZEND_ARG_TYPE_INFO(0, route_source, IS_STRING, 0)
+    ZEND_ARG_INFO(0, route_source)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(RoutingDispatcher_dispatch_arginfo, 0, 2, IS_ARRAY, 0)

@@ -12,7 +12,21 @@
 
 zend_class_entry* zpheur_schemes_http_foundation_parameterbag_class_entry;
 
-ZEND_BEGIN_ARG_INFO_EX(ParameterBag___construct_arginfo, 0, 0, 0)
+zend_object_handlers parameter_bag_object_handlers;
+
+typedef struct _parameter_bag_common_t
+{
+    HashTable* parameters;
+} parameter_bag_common_t;
+
+typedef struct _parameter_bag_object
+{
+    parameter_bag_common_t* common;
+    zend_object std;
+} parameter_bag_object;
+
+ZEND_BEGIN_ARG_INFO_EX(ParameterBag___construct_arginfo, 0, 0, 1)
+    ZEND_ARG_INFO(0, bag)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(ParameterBag_get_arginfo, 0, 1, IS_STRING|IS_NULL, 0)

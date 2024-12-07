@@ -88,10 +88,15 @@ PHP_METHOD(Dotenv, unserialize)
 		zend_string* to_str_value = zval_get_string(to_value);
 
 		zval* callback_params = safe_emalloc(2, sizeof(zval), 0);
-		ZVAL_STRINGL(&callback_params[0], env_name->val, env_name->len);
-		ZVAL_STRINGL(&callback_params[1], to_str_value->val, to_str_value->len);
+		// ZVAL_STRINGL(&callback_params[0], env_name->val, env_name->len);
+		// ZVAL_STRINGL(&callback_params[1], to_str_value->val, to_str_value->len);
+		zval _env_name; ZVAL_STRINGL(&_env_name, env_name->val, env_name->len);
+		callback_params[0] = _env_name;
+		zval _to_str_value; ZVAL_STRINGL(&_to_str_value, to_str_value->val, to_str_value->len);
+		callback_params[1] = _to_str_value;
 
 		php_call_closure(callback, Z_OBJ_P(callback), 2, callback_params);
+		efree(callback_params);
 	}
 	ZEND_HASH_FOREACH_END();
 
@@ -135,7 +140,7 @@ PHP_METHOD(Dotenv, parse)
 
     zval* unsafe_parse = zend_this_read_property("unsafe_parse");
 
-    if( !(1<<Z_TYPE_P(unsafe_parse) & (1<<_IS_BOOL|1<<IS_LONG|1<<IS_TRUE|1<<IS_FALSE)) ||
+    if( !((1<<Z_TYPE_P(unsafe_parse)) & ((1<<_IS_BOOL)|(1<<IS_LONG)|(1<<IS_TRUE)|(1<<IS_FALSE))) ||
     !zval_get_long(unsafe_parse) )
 		dotenv_safe_parse(Z_STRVAL_P(env_path), &key_value, &comments, save_comment, type_cast);
 	else	

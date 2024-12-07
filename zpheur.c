@@ -49,6 +49,7 @@ static PHP_GINIT_FUNCTION(zpheur)
 PHP_INI_MH(OnUpdateZpheurIniHandleEntryMain)
 {
 	// zpheur_globals.ZpheurIniHandleEntryMain = new_value;
+
 	ZPHEUR_G(ZpheurIniHandleEntryMain) = new_value;
 	return SUCCESS;
 }

@@ -21,6 +21,10 @@ ZEND_BEGIN_ARG_INFO_EX(Request___construct_arginfo, 0, 0, 6)
     ZEND_ARG_TYPE_INFO(0, server, IS_ARRAY, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Request___get_arginfo, 0, 1, IS_MIXED, 0)
+    ZEND_ARG_TYPE_INFO(0, property, IS_STRING, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Request_parseHeader_arginfo, 0, 1, IS_OBJECT, 0)
     ZEND_ARG_TYPE_INFO(0, server, IS_ARRAY, 0)
 ZEND_END_ARG_INFO()
@@ -32,12 +36,14 @@ ZEND_END_ARG_INFO()
 
 
 PHP_METHOD(Request, __construct);
+PHP_METHOD(Request, __get);
 PHP_METHOD(Request, parseHeader);
 PHP_METHOD(Request, parseQuery);
 
 
 static const zend_function_entry zpheur_schemes_http_foundation_request_class_method[] = {
     PHP_ME(Request, __construct, Request___construct_arginfo, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+    PHP_ME(Request, __get, Request___get_arginfo, ZEND_ACC_PUBLIC )
     PHP_ME(Request, parseHeader, Request_parseHeader_arginfo, ZEND_ACC_PUBLIC )
     PHP_ME(Request, parseQuery, Request_parseQuery_arginfo, ZEND_ACC_PUBLIC )
 	ZEND_FE_END

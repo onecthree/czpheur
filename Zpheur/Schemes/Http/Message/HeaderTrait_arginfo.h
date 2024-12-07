@@ -10,7 +10,7 @@
 #include "zend_exceptions.h"
 
 
-void local_set_header( char* header_key, char* value_src );
+void local_set_header( char* key_src, size_t key_len, char* value_src, size_t value_len );
 
 zend_class_entry* zpheur_schemes_http_message_headertrait_class_entry;
 

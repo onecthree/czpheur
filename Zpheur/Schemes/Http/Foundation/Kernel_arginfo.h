@@ -23,8 +23,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(HttpKernel_handle_arginfo, 0, 2, IS_MIXE
     ZEND_ARG_TYPE_INFO(0, request_uri, IS_STRING, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(HttpKernel_terminate_arginfo, 0, 3, IS_MIXED, 0)
-    ZEND_ARG_TYPE_INFO(0, error_exception, IS_OBJECT, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(HttpKernel_terminate_arginfo, 0, 2, IS_MIXED, 0)
     ZEND_ARG_TYPE_INFO(0, class_name, IS_STRING, 0)
     ZEND_ARG_TYPE_INFO(0, method_name, IS_STRING, 0)
 ZEND_END_ARG_INFO()

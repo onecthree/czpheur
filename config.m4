@@ -63,6 +63,8 @@ if test "$PHP_ZPHEUR" != "no"; then
       AC_MSG_RESULT([$mongodb_version, added Voile include])
     fi
 
+  CFLAGS="$CFLAGS $TARGET_CFLAG"
+
   PHP_NEW_EXTENSION(
     [zpheur], 
     [                                                                   \

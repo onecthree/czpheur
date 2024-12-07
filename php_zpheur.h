@@ -38,7 +38,12 @@ ZEND_END_MODULE_GLOBALS(zpheur)
 
 ZEND_EXTERN_MODULE_GLOBALS(zpheur)
 
-#define ZPHEUR_G(v) ZEND_MODULE_GLOBALS_ACCESSOR(zpheur, v)
+// #define ZPHEUR_G(v) ZEND_MODULE_GLOBALS_ACCESSOR(zpheur, v)
+#ifdef ZTS
+#define ZPHEUR_G(v) TSRMG(zpheur_globals_id, zend_zpheur_globals *, v)
+#else
+#define ZPHEUR_G(v) (zpheur_globals.v)
+#endif
 
 ZEND_FUNCTION(env);
 ZEND_FUNCTION(httpverb);

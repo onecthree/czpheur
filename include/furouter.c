@@ -576,11 +576,17 @@ int static_furouter_finder( zend_string* route_current, void* target_uri_src, si
                     case TOKEN_SYMBOL_WHITESPACE:
                     {
                         #ifdef PHP_VERSION
-                        zval placeholder_value;
 
                         onec_string_trimlc(path_value);
-                        ZVAL_STRINGL(&placeholder_value, ((furouter_target_uri*)target_uri_src)[context.path_index].val, ((furouter_target_uri*)target_uri_src)[context.path_index].len);
-                        zend_hash_update_ind(*placeholder, zend_string_init(path_value.val, path_value.len, 0), &placeholder_value);
+                        zval _segment;
+                        zend_string* placeholder_value =  // Do not release, php keep it track
+                        zend_string_init(
+                            ((furouter_target_uri*)target_uri_src)[context.path_index].val,
+                            ((furouter_target_uri*)target_uri_src)[context.path_index].len,
+                            0
+                        );
+                        ZVAL_STR(&_segment, placeholder_value);
+                        zend_hash_str_update(*placeholder, path_value.val, path_value.len, &_segment);
                         #endif
 
                         context.state = STATE_FINDER_TYPE_SCOPE;

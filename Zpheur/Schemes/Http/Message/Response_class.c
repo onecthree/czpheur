@@ -5,8 +5,57 @@
 #include <string.h>
 #include <zpheur.h>
 #include <include/runtime.h>
+#include <include/onecstr.h>
 #include "HeaderTrait_arginfo.h"
 #include "Response_arginfo.h"
+
+
+void free_response_object(zend_object* object)
+{
+    response_object* instance = ZPHEUR_GET_OBJECT(response_object, object);
+
+    zend_object_std_dtor(&instance->std);
+    if( instance->common )
+    {
+        if( instance->common->headers )
+        {
+            zend_hash_destroy(instance->common->headers);
+            FREE_HASHTABLE(instance->common->headers);
+        } 
+
+        if( instance->common->output_buffer )
+        {
+            onec_string_release(instance->common->output_buffer);
+        }
+
+        efree(instance->common);       
+    }
+}
+
+zend_object* create_response_object( zend_class_entry* ce )
+{
+    response_object* object = 
+        ecalloc(1, sizeof(response_object) + zend_object_properties_size(ce));
+
+    zend_object_std_init(&object->std, ce);
+    object_properties_init(&object->std, ce);
+
+    memcpy(&response_object_handlers, zend_get_std_object_handlers(), sizeof(response_object_handlers));
+    response_object_handlers.offset = XtOffsetOf(response_object, std);
+    response_object_handlers.free_obj = free_response_object;
+    object->std.handlers = &response_object_handlers;
+
+    object->common = ecalloc(1, sizeof(response_common_t));
+
+    HashTable* headers;
+    ALLOC_HASHTABLE(headers);
+    zend_hash_init(headers, 0, NULL, ZVAL_PTR_DTOR, 0);
+    object->common->write_header = true;
+    object->common->headers = headers;
+    object->common->output_buffer = onec_string_initd("", sizeof("") - 1);
+
+    return &object->std;
+}
 
 void static _set_mime_type( zend_ulong utype )
 {
@@ -37,7 +86,17 @@ void static _set_mime_type( zend_ulong utype )
 
 PHP_METHOD(Response, __construct)
 {
-    ZEND_PARSE_PARAMETERS_NONE();
+    bool write_header = true;
+
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_BOOL(write_header)
+    ZEND_PARSE_PARAMETERS_END();
+
+    response_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(response_object, getThis());
+
+    instance->common->write_header = write_header;
 }
 
 PHP_METHOD(Response, send)
@@ -49,12 +108,17 @@ PHP_METHOD(Response, send)
         Z_PARAM_STRING(output_buffer_src, output_buffer_len)
     ZEND_PARSE_PARAMETERS_END();
 
-    zval output_buffer;
-    ZVAL_STRINGL(&output_buffer, output_buffer_src, output_buffer_len);
+    response_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(response_object, getThis());
 
-    zend_this_update_property("output_buffer", &output_buffer);
+    if( instance->common->output_buffer != NULL )
+    {
+        onec_string_release(instance->common->output_buffer);
+        instance->common->output_buffer = NULL;
+    }
+    instance->common->output_buffer = onec_string_initd(output_buffer_src, output_buffer_len);
 
-    RETURN_ZVAL(getThis(), 0, 0);
+    RETURN_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(Response, statusCode)
@@ -65,26 +129,34 @@ PHP_METHOD(Response, statusCode)
         Z_PARAM_LONG(response_code)
     ZEND_PARSE_PARAMETERS_END();
 
+    response_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(response_object, getThis());
 
     if( response_code >= 100 && response_code <= 599 )
     {
-        if( SG(headers_sent) && !SG(request_info).no_headers )
+        if( SG(headers_sent) && !SG(request_info).no_headers && instance->common->write_header )
         {
             const char *output_start_filename = php_output_get_start_filename();
             int output_start_lineno = php_output_get_start_lineno();
 
             if (output_start_filename) {
-                zend_error(E_ERROR, "Cannot set response code - headers already sent "
+                php_error_docref(NULL, E_ERROR, "Cannot set response code - headers already sent "
                     "(output started at %s:%d)", output_start_filename, output_start_lineno);
             } else {
-                zend_error(E_ERROR, "Cannot set response code - headers already sent");
+                php_error_docref(NULL, E_ERROR, "Cannot set response code - headers already sent");
             }
         }
 
-        zend_long old_response_code;
+        if( instance->common->write_header )
+        {
+            zend_long old_response_code;
 
-        old_response_code = SG(sapi_headers).http_response_code;
-        SG(sapi_headers).http_response_code = (int)response_code;
+            old_response_code = SG(sapi_headers).http_response_code;
+            SG(sapi_headers).http_response_code = (int)response_code;
+        }
+
+        zval new_response_code; ZVAL_LONG(&new_response_code, response_code);
+        zend_this_update_property("code", &new_response_code);
     }
     else
     {
@@ -94,7 +166,7 @@ PHP_METHOD(Response, statusCode)
         zend_error(E_ERROR, "Non-standard HTTP status code given");
     }
 
-    RETURN_ZVAL(getThis(), 0, 0);
+    RETURN_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(Response, set)
@@ -109,12 +181,19 @@ PHP_METHOD(Response, set)
         Z_PARAM_OPTIONAL
         Z_PARAM_STRING(value_src, value_len)
     ZEND_PARSE_PARAMETERS_END();
-       
+
+    response_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(response_object, getThis());
+
     if( Z_TYPE_P(header) == IS_ARRAY )
     {
         ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(header), zend_string* _header, zval* _value )
         {
-            local_set_header(_header->val, Z_STRVAL_P(_value));
+            zend_string* __value = zval_get_string(_value);
+            zend_hash_update(instance->common->headers, _header, _value);
+
+            if( instance->common->write_header )
+                local_set_header(_header->val, _header->len, __value->val, __value->len);
         }
         ZEND_HASH_FOREACH_END();
     }
@@ -124,10 +203,20 @@ PHP_METHOD(Response, set)
         {
             zend_error(E_ERROR, "value_src must be filled, with use inline header");
         }       
-        local_set_header(Z_STRVAL_P(header), value_src);
+        zend_string* __header_key = zval_get_string(header);
+        zend_string* __header_value = zend_string_init(value_src, value_len, 0);
+        zval ___header_value; ZVAL_STR(&___header_value, __header_value);
+
+        zend_hash_update(instance->common->headers, __header_key, &___header_value);
+
+        if( instance->common->write_header )
+            local_set_header(__header_key->val, __header_key->len, __header_value->val, __header_value->len);
+
+        zend_string_release(__header_key);
+        // zend_string_release(__header_value);
     }
 
-    RETURN_ZVAL(getThis(), 0, 0);
+    RETURN_ZVAL(getThis(), 1, 0);
 }
 
 PHP_METHOD(Response, redirect)
@@ -143,49 +232,92 @@ PHP_METHOD(Response, redirect)
         Z_PARAM_ZVAL(options)
     ZEND_PARSE_PARAMETERS_END();
 
-    
+    response_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(response_object, getThis());
+
     sapi_header_line ctr = {0};
 
+    zval code;
     if( options && Z_TYPE_P(options) == IS_LONG )
     {
         switch( zval_get_long(options) )
         {
             case 301: // permanent | 301
+                ZVAL_LONG(&code, 301);
                 ctr.line = "HTTP/1.1 301 Moved Permanently";
                 ctr.line_len = sizeof("HTTP/1.1 301 Moved Permanently") - 1;
             break;
             case 307: // temporary | 307
+                ZVAL_LONG(&code, 307);
                 ctr.line = "HTTP/1.1 307 Temporary Redirect";
                 ctr.line_len = sizeof("HTTP/1.1 307 Temporary Redirect") - 1;
             break;
         }
+
     }
     else
     {
+        ZVAL_LONG(&code, 302);
         ctr.line = "HTTP/1.1 302 Found";
         ctr.line_len = sizeof("HTTP/1.1 302 Found") - 1;
     }
-    sapi_header_op(SAPI_HEADER_REPLACE, &ctr);
+    if( instance->common->write_header )
+        sapi_header_op(SAPI_HEADER_REPLACE, &ctr);
+    zend_this_update_property("code", &code);
 
-    url_src[url_len] = '\0';
-    size_t redirect_target_len = snprintf(NULL, 0, "Location: %s", url_src);
-    char redirect_target_src[redirect_target_len];
-    php_sprintf(redirect_target_src, "Location: %s", url_src);
+    // url_src[url_len] = '\0';
+    // size_t redirect_target_len = snprintf(NULL, 0, "Location: %s", url_src);
+    // char redirect_target_src[redirect_target_len];
+    // php_sprintf(redirect_target_src, "Location: %s", url_src);
+    onec_stringlc redirect_target;
+    onec_string_initlc(redirect_target);
 
-    ctr.line = redirect_target_src;
-    ctr.line_len = redirect_target_len;
-    sapi_header_op(SAPI_HEADER_REPLACE, &ctr);
+    onec_string_appendlc(redirect_target, 2, "Location: ", url_src);
+    onec_string_trimlc(redirect_target);
 
-    RETURN_ZVAL(getThis(), 0, 0);
+    // ctr.line = redirect_target_src;
+    // ctr.line_len = redirect_target_len;
+    ctr.line = redirect_target.val;
+    ctr.line_len = redirect_target.len;
+
+    if( instance->common->write_header )
+        sapi_header_op(SAPI_HEADER_REPLACE, &ctr);
+
+    zend_string* redirect = zend_string_init(url_src, url_len, 0);
+    zval _redirect; ZVAL_STR(&_redirect, redirect);
+    zend_this_update_property("redirect", &_redirect);
+    zend_string_release(redirect);
+
+    RETURN_ZVAL(getThis(), 1, 0);
+}
+
+PHP_METHOD(Response, getHeaders)
+{
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    response_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(response_object, getThis());
+
+    HashTable* headers;
+    ALLOC_HASHTABLE(headers);
+    zend_hash_init(headers, 0, NULL, ZVAL_PTR_DTOR, 0);
+    zend_hash_copy(headers, instance->common->headers, zval_add_ref);
+
+    RETURN_ARR(headers);
 }
 
 PHP_METHOD(Response, __toString)
 {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    zval* output_buffer = zend_this_read_property("output_buffer");
+    response_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(response_object, getThis());
 
-    RETURN_ZVAL(output_buffer, 1, 0);
+    zval asd; ZVAL_STRINGL(&asd, instance->common->output_buffer->val, instance->common->output_buffer->len);
+    RETURN_ZVAL(&asd, 1, 0);
+    // RETURN_STR(zend_string_init(
+    //     instance->common->output_buffer->val, instance->common->output_buffer->len, 0
+    // ));
 }
 
 ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Message_Response)
@@ -194,9 +326,14 @@ ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Message_Response)
 
     INIT_NS_CLASS_ENTRY(ce, "Zpheur\\Schemes\\Http\\Message", "Response", zpheur_schemes_http_message_response_class_method);
     zpheur_schemes_http_message_response_class_entry = zend_register_internal_class(&ce);
-    zpheur_schemes_http_message_response_class_entry->ce_flags |= ZEND_ACC_ALLOW_DYNAMIC_PROPERTIES;
+    zpheur_schemes_http_message_response_class_entry->ce_flags |= ZEND_ACC_NO_DYNAMIC_PROPERTIES;
+    zpheur_schemes_http_message_response_class_entry->create_object = create_response_object;
 
-    zend_declare_property_stringl(zpheur_schemes_http_message_response_class_entry, "output_buffer", sizeof("output_buffer") - 1, "", sizeof("") - 1, ZEND_ACC_PUBLIC);
+
+    // zend_declare_property_stringl(zpheur_schemes_http_message_response_class_entry, "output_buffer", sizeof("output_buffer") - 1, "", sizeof("") - 1, ZEND_ACC_PUBLIC);
+    // zend_declare_property_null(zpheur_schemes_http_message_response_class_entry, "headers", sizeof("headers") - 1, ZEND_ACC_PUBLIC);
+    zend_declare_property_long(zpheur_schemes_http_message_response_class_entry, "code", sizeof("code") - 1, 200, ZEND_ACC_PUBLIC);
+    zend_declare_property_null(zpheur_schemes_http_message_response_class_entry, "redirect", sizeof("redirect") - 1, ZEND_ACC_PUBLIC);
 
     zend_declare_class_constant_long(
         zpheur_schemes_http_message_response_class_entry, "HTTP_CONTINUE", sizeof("HTTP_CONTINUE") - 1, 100

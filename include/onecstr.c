@@ -10,7 +10,7 @@ onec_string* __attribute__ ((noinline))
 _onec_string_initd( char* const string, size_t length )
 {
 	onec_string* onec_str = (onec_string*)malloc(sizeof(onec_string));
-	onec_str->val = (char*)malloc(sizeof(char) * length);
+	onec_str->val = (char*)malloc( (sizeof(char)*length) + 1 );
 	onec_str->size = length * 2;
 	onec_str->len = length;
 

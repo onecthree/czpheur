@@ -5,133 +5,259 @@
 #include <string.h>
 #include <zpheur.h>
 #include <include/runtime.h>
+#include <include/onecstr.h>
+#include <Zpheur/Schemes/Http/Foundation/ParameterBag_arginfo.h>
 #include "Request_arginfo.h"
 
 
+zend_object_handlers request_object_handlers;
+
+typedef struct _request_common_t
+{
+    zend_object* input; // Need release
+    zend_object* query; // Need release
+    zend_object* cookie; // Need release
+    zend_object* attribute; // Need release
+    zend_object* header; // Need release
+    zend_object* server; // Need release
+} request_common_t;
+
+typedef struct _request_object
+{
+    request_common_t* common;
+    zend_object std;
+} request_object;
+
+void free_request_object(zend_object* object)
+{
+    request_object* instance = ZPHEUR_GET_OBJECT(request_object, object);
+
+    zend_object_std_dtor(&instance->std);
+    if( instance->common )
+    {
+        if( instance->common->input != NULL )
+            zend_object_release(instance->common->input);
+        if( instance->common->query != NULL )
+            zend_object_release(instance->common->query);
+        if( instance->common->cookie != NULL )
+            zend_object_release(instance->common->cookie);
+        // if( instance->common->attribute != NULL )
+        //     zend_object_release(instance->common->attribute);
+        // if( instance->common->header != NULL )
+        //     zend_object_release(instance->common->header);
+        if( instance->common->server != NULL )
+            zend_object_release(instance->common->server);
+
+        efree(instance->common);       
+    }
+}
+
+zend_object* create_request_object( zend_class_entry* ce )
+{
+    request_object* object = 
+        ecalloc(1, sizeof(request_object) + zend_object_properties_size(ce));
+
+    zend_object_std_init(&object->std, ce);
+    object_properties_init(&object->std, ce);
+
+    memcpy(&request_object_handlers, zend_get_std_object_handlers(), sizeof(request_object_handlers));
+    request_object_handlers.offset = XtOffsetOf(request_object, std);
+    request_object_handlers.free_obj = free_request_object;
+    object->std.handlers = &request_object_handlers;
+    object->common = ecalloc(1, sizeof(request_common_t));
+    object->common->input = NULL;
+    object->common->query = NULL;
+    object->common->cookie = NULL;
+    object->common->attribute = NULL;
+    object->common->header = NULL;
+    object->common->server = NULL;
+
+    return &object->std;
+}
+
 PHP_METHOD(Request, __construct)
 {
-    zval*       request;
-    zval*       query;
-    zval*       cookies;
-    zval*       attributes;
-    zval*       files;
-    zval*       server;
-    zval*       headers;
+    HashTable*       input;
+    HashTable*       query;
+    HashTable*       cookie;
+    HashTable*       attribute;
+    HashTable*       files;
+    HashTable*       server;
+    HashTable*       headers;
 
     ZEND_PARSE_PARAMETERS_START(6, 6)
-        Z_PARAM_ARRAY(request)
-        Z_PARAM_ARRAY(query)
-        Z_PARAM_ARRAY(cookies)
-        Z_PARAM_ARRAY(attributes)
-        Z_PARAM_ARRAY(files)
-        Z_PARAM_ARRAY(server)
+        Z_PARAM_ARRAY_HT(input)
+        Z_PARAM_ARRAY_HT(query)
+        Z_PARAM_ARRAY_HT(cookie)
+        Z_PARAM_ARRAY_HT(attribute)
+        Z_PARAM_ARRAY_HT(files)
+        Z_PARAM_ARRAY_HT(server)
     ZEND_PARSE_PARAMETERS_END();
+
+    request_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(request_object, getThis());
 
     /* {{{ REQUEST */
     zend_object* input_object = php_class_init(
         "Zpheur\\Schemes\\Http\\Foundation\\InputBag",
         sizeof("Zpheur\\Schemes\\Http\\Foundation\\InputBag") - 1
+        // "Zpheur\\Schemes\\Http\\Foundation\\ParameterBag",
+        // sizeof("Zpheur\\Schemes\\Http\\Foundation\\ParameterBag") - 1
     );
-    {
+    do {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
-        ZVAL_ZVAL(&params___construct[0], request, 1, 0);
+        zval arr_input; ZVAL_ARR(&arr_input, input);
+        params___construct[0] = arr_input;
 
         php_class_call_constructor(input_object, 1, params___construct);
-    }
+        efree(params___construct);
+    } while(0);
 
-    zval target_input;
-    ZVAL_OBJ(&target_input, input_object);
-    zend_this_update_property("input", &target_input);
+    instance->common->input = input_object;
     /* }}} */   
 
     /* {{{ QUERY */
     zend_object* query_object = php_class_init(
         "Zpheur\\Schemes\\Http\\Foundation\\InputBag",
         sizeof("Zpheur\\Schemes\\Http\\Foundation\\InputBag") - 1
+        // "Zpheur\\Schemes\\Http\\Foundation\\ParameterBag",
+        // sizeof("Zpheur\\Schemes\\Http\\Foundation\\ParameterBag") - 1
     );
-    {
+    do {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
-        ZVAL_ZVAL(&params___construct[0], query, 1, 0);
+        zval arr_query; ZVAL_ARR(&arr_query, query);
+        params___construct[0] = arr_query;
 
-        php_class_call_method(query_object, "__construct", sizeof("__construct") - 1, 1, params___construct, 0);
-    }
+        php_class_call_constructor(query_object, 1, params___construct);
+        efree(params___construct);
+    } while(0);
 
-    zval target_query;
-    ZVAL_OBJ(&target_query, query_object);
-    zend_this_update_property("query", &target_query);
+    instance->common->query = query_object;
     /* }}} */
 
-    /* {{{ COOKIES */
-    zend_object* cookies_object = php_class_init(
+    // /* {{{ cookie */
+    zend_object* cookie_object = php_class_init(
         "Zpheur\\Schemes\\Http\\Foundation\\InputBag",
         sizeof("Zpheur\\Schemes\\Http\\Foundation\\InputBag") - 1
+        // "Zpheur\\Schemes\\Http\\Foundation\\ParameterBag",
+        // sizeof("Zpheur\\Schemes\\Http\\Foundation\\ParameterBag") - 1
     );
-    {
+    do {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
-        ZVAL_ZVAL(&params___construct[0], cookies, 1, 0);
+        zval arr_cookie; ZVAL_ARR(&arr_cookie, cookie);
+        params___construct[0] = arr_cookie;
 
-        php_class_call_method(cookies_object, "__construct", sizeof("__construct") - 1, 1, params___construct, 0);
-    }
+        php_class_call_constructor(cookie_object, 1, params___construct);
+        efree(params___construct);
+    } while(0);
 
-    zval target_cookies;
-    ZVAL_OBJ(&target_cookies, cookies_object);
-    zend_this_update_property("cookies", &target_cookies);
-    /* }}} */
+    instance->common->cookie = cookie_object;
+    // /* }}} */
 
-    /* {{{ ATTRIBUTES */
-    zend_object* attributes_object = php_class_init(
-        "Zpheur\\Schemes\\Http\\Foundation\\ParameterBag",
-        sizeof("Zpheur\\Schemes\\Http\\Foundation\\ParameterBag") - 1
-    );
-    {
-        zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
-        ZVAL_ZVAL(&params___construct[0], attributes, 1, 0);
+    // /* {{{ attribute */
+    // zend_object* attribute_object = php_class_init(
+    //     "Zpheur\\Schemes\\Http\\Foundation\\ParameterBag",
+    //     sizeof("Zpheur\\Schemes\\Http\\Foundation\\ParameterBag") - 1
+    // );
+    // {
+    //     zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
+    //     // ZVAL_ZVAL(&params___construct[0], attribute, 1, 0);
+    //     params___construct[0] = *attribute;
 
-        php_class_call_method(attributes_object, "__construct", sizeof("__construct") - 1, 1, params___construct, 0);
-    }
+    //     php_class_call_constructor(attribute_object, 1, params___construct);
+    //     efree(params___construct);
+    // }
 
-    zval target_attributes;
-    ZVAL_OBJ(&target_attributes, attributes_object);
-    zend_this_update_property("attributes", &target_attributes);
-    /* }}} */   
+    // instance->common->attribute = attribute_object;
+    // /* }}} */   
 
-    zend_this_update_property("files", files);
-
-
-    /* {{{ HEADERS */
-    zend_object* header_object = php_class_init(
-        "Zpheur\\Schemes\\Http\\Foundation\\HeaderBag",
-        sizeof("Zpheur\\Schemes\\Http\\Foundation\\HeaderBag") - 1
-    );
-    {
-        zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
-        ZVAL_ZVAL(&params___construct[0], server, 1, 0);
-
-        php_class_call_method(header_object, "__construct", sizeof("__construct") - 1, 1, params___construct, 0);
-    }
-
-    zval target_headers;
-    ZVAL_OBJ(&target_headers, header_object);
-    zend_this_update_property("headers", &target_headers);
-    /* }}} */
+    // // zend_this_update_property("files", files);
 
 
-    /* {{{ SERVER */
+    // /* {{{ HEADERS */
+    // zend_object* header_object = php_class_init(
+    //     "Zpheur\\Schemes\\Http\\Foundation\\HeaderBag",
+    //     sizeof("Zpheur\\Schemes\\Http\\Foundation\\HeaderBag") - 1
+    // );
+    // {
+    //     zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
+    //     // ZVAL_ZVAL(&params___construct[0], server, 1, 0);
+    //     params___construct[0] = *server;
+
+    //     php_class_call_constructor(header_object, 1, params___construct);
+    //     efree(params___construct);
+    // }
+
+    // instance->common->header = header_object;
+    // /* }}} */
+
+
+    // /* {{{ SERVER */
+    // Is actually use ServerBag
     zend_object* server_object = php_class_init(
-        "Zpheur\\Schemes\\Http\\Foundation\\ServerBag",
-        sizeof("Zpheur\\Schemes\\Http\\Foundation\\ServerBag") - 1
+        "Zpheur\\Schemes\\Http\\Foundation\\InputBag",
+        sizeof("Zpheur\\Schemes\\Http\\Foundation\\InputBag") - 1
+        // "Zpheur\\Schemes\\Http\\Foundation\\ParameterBag",
+        // sizeof("Zpheur\\Schemes\\Http\\Foundation\\ParameterBag") - 1
     );
-    {
+    do {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
-        ZVAL_ZVAL(&params___construct[0], server, 1, 0);
+        zval arr_server; ZVAL_ARR(&arr_server, server);
+        params___construct[0] = arr_server;
 
-        php_class_call_method(server_object, "__construct", sizeof("__construct") - 1, 1, params___construct, 0);
+        php_class_call_constructor(server_object, 1, params___construct);
+        efree(params___construct);
+    } while(0);
+
+    instance->common->server = server_object;
+    /* }}} */
+}
+
+PHP_METHOD(Request, __get)
+{
+    char* property_src = NULL;
+    size_t property_len = 0;
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_STRING(property_src, property_len)
+    ZEND_PARSE_PARAMETERS_END();
+
+    request_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(request_object, getThis());  
+
+    if( strncmp("input", property_src, sizeof("input") - 1) == 0 )
+    {
+        // zval copy; ZVAL_OBJ(&copy, instance->common->input);
+        instance->common->input->gc.refcount++; // Increase refcount for staying
+        RETURN_OBJ(instance->common->input);
+        // RETURN_ZVAL(&copy, 1, 0);
     }
 
-    zval target_server;
-    ZVAL_OBJ(&target_server, server_object);
-    zend_this_update_property("server", &target_server);
-    /* }}} */
+    if( strncmp("query", property_src, sizeof("query") - 1) == 0 )
+    {
+        // zval copy; ZVAL_OBJ(&copy, instance->common->query);
+        instance->common->query->gc.refcount++; // Increase refcount for staying
+        RETURN_OBJ(instance->common->query);
+        // RETURN_ZVAL(&copy, 1, 0);
+    }
+
+    if( strncmp("cookie", property_src, sizeof("cookie") - 1) == 0 )
+    {
+        // zval copy; ZVAL_OBJ(&copy, instance->common->cookie);
+        instance->common->cookie->gc.refcount++; // Increase refcount for staying
+        RETURN_OBJ(instance->common->cookie);
+        // RETURN_ZVAL(&copy, 1, 0);
+    }
+
+    if( strncmp("server", property_src, sizeof("server") - 1) == 0 )
+    {
+        // zval copy; ZVAL_OBJ(&copy, instance->common->server);
+        instance->common->server->gc.refcount++; // Increase refcount for staying
+        RETURN_OBJ(instance->common->server);
+        // RETURN_ZVAL(&copy, 1, 0);
+    }
+
+    RETURN_NULL();
 }
 
 PHP_METHOD(Request, parseQuery)
@@ -182,7 +308,7 @@ PHP_METHOD(Request, parseQuery)
 
 PHP_METHOD(Request, parseHeader)
 {
-    zval*         global_server;
+    zval* global_server;
 
     ZEND_PARSE_PARAMETERS_START(1, 1)
     Z_PARAM_ZVAL(global_server)
@@ -243,14 +369,7 @@ ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Foundation_Request)
     INIT_NS_CLASS_ENTRY(ce, "Zpheur\\Schemes\\Http\\Foundation", "Request", zpheur_schemes_http_foundation_request_class_method);
     zpheur_schemes_http_foundation_request_class_entry = zend_register_internal_class(&ce);
     zpheur_schemes_http_foundation_request_class_entry->ce_flags |= ZEND_ACC_ALLOW_DYNAMIC_PROPERTIES;
-
-    zend_declare_property_null(zpheur_schemes_http_foundation_request_class_entry, "input", sizeof("input") - 1, ZEND_ACC_PUBLIC);
-    zend_declare_property_null(zpheur_schemes_http_foundation_request_class_entry, "query", sizeof("query") - 1, ZEND_ACC_PUBLIC);
-    zend_declare_property_null(zpheur_schemes_http_foundation_request_class_entry, "cookies", sizeof("cookies") - 1, ZEND_ACC_PUBLIC);
-    zend_declare_property_null(zpheur_schemes_http_foundation_request_class_entry, "attributes", sizeof("attributes") - 1, ZEND_ACC_PUBLIC);
-    zend_declare_property_null(zpheur_schemes_http_foundation_request_class_entry, "files", sizeof("files") - 1, ZEND_ACC_PUBLIC);
-    zend_declare_property_null(zpheur_schemes_http_foundation_request_class_entry, "server", sizeof("server") - 1, ZEND_ACC_PUBLIC);
-    zend_declare_property_null(zpheur_schemes_http_foundation_request_class_entry, "headers", sizeof("headers") - 1, ZEND_ACC_PUBLIC);
+    zpheur_schemes_http_foundation_request_class_entry->create_object = create_request_object;
 
     return SUCCESS;
 }

@@ -13,28 +13,6 @@
 #include "Model_arginfo.h"
 
 
-#define INP_CONSTANT_AOBJECTID              7399721430
-#define INP_CONSTANT_ASTRING                74585703
-#define INP_CONSTANT_ANUMBER                74089924
-#define INP_CONSTANT_ABOOLEAN               728329180
-#define INP_CONSTANT_ADATETIME              7289705691
-#define INP_CONSTANT_AARRAY                 7276491
-#define INP_CONSTANT_AOBJECT                73997206
-#define INP_CONSTANT_ADECIMAL128            729206983456
-
-#define INP_CONSTANT_RIGHT_OBJECTID         899721430
-#define INP_CONSTANT_RIGHT_STRING           12785703
-#define INP_CONSTANT_RIGHT_INT              11716
-#define INP_CONSTANT_RIGHT_BOOL             110318
-#define INP_CONSTANT_RIGHT_UTCDATETIME      941489705691
-#define INP_CONSTANT_RIGHT_ARRAY            1096491
-#define INP_CONSTANT_RIGHT_STDCLASS         1276788965
-#define INP_CONSTANT_RIGHT_DECIMAL128       79206983456
-
-#define INP_TOKEN_SYMBOL_BACKSLASH          '\\'
-#define INP_TOKEN_CHAR_EOF                  '\0'
-#define INP_TOKEN_SYMBOL_PIPE               '|'
-
 static inline zend_object* __attribute__ ((always_inline))
 voile_model_constructor_init( zend_class_entry* target_model_ce )
 {
@@ -48,11 +26,11 @@ voile_model_constructor_init( zend_class_entry* target_model_ce )
 static inline zend_ulong __attribute__ ((always_inline))
 field_type_finder( zend_string* type_str_field_zs, zend_property_info* zpi_property, char* property_name, zend_object* model_class )
 {
-    zend_ulong      target_field_type = 99;
-    unsigned long   input_constant = 0;
-    unsigned long   left = 0;
-    unsigned long   right = 0;
-    char            input;
+    int target_field_type = 99;
+    unsigned long input_constant = 0;
+    unsigned long left = 0;
+    unsigned long right = 0;
+    char input;
 
     for( int i = 0; i <= type_str_field_zs->len; i += 1 )
     {
@@ -60,6 +38,7 @@ field_type_finder( zend_string* type_str_field_zs, zend_property_info* zpi_prope
 
         switch( input )
         {
+            // Reset while backslash found
             case INP_TOKEN_SYMBOL_BACKSLASH:
                 input_constant = 0;
                 continue;
@@ -144,6 +123,7 @@ field_type_finder( zend_string* type_str_field_zs, zend_property_info* zpi_prope
         input_constant *= 10;
         input_constant += input;
 
+        // Limiter maximum size
         if( input_constant > INP_CONSTANT_RIGHT_UTCDATETIME )
             input_constant = 0;
     }
@@ -154,8 +134,8 @@ field_type_finder( zend_string* type_str_field_zs, zend_property_info* zpi_prope
         onec_string* error_message;
         onec_string_init(error_message);
 
-        #define VOILE_NS    "Zpheur\\Databases\\Voile\\Schema\\AbstractionType"
-        #define MONGOD_NS   "MongoDB\\BSON"
+#define VOILE_NS    "Zpheur\\Databases\\Voile\\Schema\\AbstractionType"
+#define MONGOD_NS   "MongoDB\\BSON"
 
         switch( left )
         {

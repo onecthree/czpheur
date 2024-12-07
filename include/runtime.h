@@ -89,9 +89,14 @@ zend_object* php_class_init_ex(
     char* const         class_name
 );
 
+zend_object* php_class_init_silent(
+    char* class_name_src,
+    size_t class_name_len 
+);
+
 zend_object* php_class_init(
-    char* const         class_name_src,
-    size_t              class_name_len
+    char* class_name_src,
+    size_t class_name_len
 );
 
 void php_class_call_constructor(
