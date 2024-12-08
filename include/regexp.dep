@@ -1,2 +1,0 @@
-include/regexp.lo: /home/onecthree/Projects/czpheur/include/regexp.c \
- /home/onecthree/Projects/czpheur/include/regexp.h
