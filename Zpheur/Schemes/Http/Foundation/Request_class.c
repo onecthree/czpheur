@@ -18,6 +18,7 @@ typedef struct _request_common_t
     zend_object* query; // Need release
     zend_object* cookie; // Need release
     zend_object* attribute; // Need release
+    zend_object* files; // Need release
     zend_object* header; // Need release
     zend_object* server; // Need release
 } request_common_t;
@@ -43,6 +44,8 @@ void free_request_object(zend_object* object)
             zend_object_release(instance->common->cookie);
         // if( instance->common->attribute != NULL )
         //     zend_object_release(instance->common->attribute);
+        if( instance->common->files != NULL )
+            zend_object_release(instance->common->files);
         // if( instance->common->header != NULL )
         //     zend_object_release(instance->common->header);
         if( instance->common->server != NULL )
@@ -69,6 +72,7 @@ zend_object* create_request_object( zend_class_entry* ce )
     object->common->query = NULL;
     object->common->cookie = NULL;
     object->common->attribute = NULL;
+    object->common->files = NULL;
     object->common->header = NULL;
     object->common->server = NULL;
 
@@ -77,21 +81,22 @@ zend_object* create_request_object( zend_class_entry* ce )
 
 PHP_METHOD(Request, __construct)
 {
-    HashTable*       input;
-    HashTable*       query;
-    HashTable*       cookie;
-    HashTable*       attribute;
-    HashTable*       files;
-    HashTable*       server;
-    HashTable*       headers;
+    // HashTable*       input;
+    zval* input;
+    zval* query;
+    zval* cookie;
+    zval* attribute;
+    zval* files;
+    zval* server;
+    zval* headers;
 
     ZEND_PARSE_PARAMETERS_START(6, 6)
-        Z_PARAM_ARRAY_HT(input)
-        Z_PARAM_ARRAY_HT(query)
-        Z_PARAM_ARRAY_HT(cookie)
-        Z_PARAM_ARRAY_HT(attribute)
-        Z_PARAM_ARRAY_HT(files)
-        Z_PARAM_ARRAY_HT(server)
+        Z_PARAM_ARRAY(input)
+        Z_PARAM_ARRAY(query)
+        Z_PARAM_ARRAY(cookie)
+        Z_PARAM_ARRAY(attribute)
+        Z_PARAM_ARRAY(files)
+        Z_PARAM_ARRAY(server)
     ZEND_PARSE_PARAMETERS_END();
 
     request_object* instance = 
@@ -106,8 +111,7 @@ PHP_METHOD(Request, __construct)
     );
     do {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
-        zval arr_input; ZVAL_ARR(&arr_input, input);
-        params___construct[0] = arr_input;
+        params___construct[0] = *input;
 
         php_class_call_constructor(input_object, 1, params___construct);
         efree(params___construct);
@@ -125,8 +129,7 @@ PHP_METHOD(Request, __construct)
     );
     do {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
-        zval arr_query; ZVAL_ARR(&arr_query, query);
-        params___construct[0] = arr_query;
+        params___construct[0] = *query;
 
         php_class_call_constructor(query_object, 1, params___construct);
         efree(params___construct);
@@ -135,7 +138,7 @@ PHP_METHOD(Request, __construct)
     instance->common->query = query_object;
     /* }}} */
 
-    // /* {{{ cookie */
+    /* {{{ cookie */
     zend_object* cookie_object = php_class_init(
         "Zpheur\\Schemes\\Http\\Foundation\\InputBag",
         sizeof("Zpheur\\Schemes\\Http\\Foundation\\InputBag") - 1
@@ -144,53 +147,32 @@ PHP_METHOD(Request, __construct)
     );
     do {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
-        zval arr_cookie; ZVAL_ARR(&arr_cookie, cookie);
-        params___construct[0] = arr_cookie;
+        params___construct[0] = *cookie;
 
         php_class_call_constructor(cookie_object, 1, params___construct);
         efree(params___construct);
     } while(0);
 
     instance->common->cookie = cookie_object;
-    // /* }}} */
+    /* }}} */
 
-    // /* {{{ attribute */
-    // zend_object* attribute_object = php_class_init(
-    //     "Zpheur\\Schemes\\Http\\Foundation\\ParameterBag",
-    //     sizeof("Zpheur\\Schemes\\Http\\Foundation\\ParameterBag") - 1
-    // );
-    // {
-    //     zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
-    //     // ZVAL_ZVAL(&params___construct[0], attribute, 1, 0);
-    //     params___construct[0] = *attribute;
+    /* {{{ files */
+    zend_object* files_object = php_class_init(
+        "Zpheur\\Schemes\\Http\\Foundation\\InputBag",
+        sizeof("Zpheur\\Schemes\\Http\\Foundation\\InputBag") - 1
+        // "Zpheur\\Schemes\\Http\\Foundation\\ParameterBag",
+        // sizeof("Zpheur\\Schemes\\Http\\Foundation\\ParameterBag") - 1
+    );
+    do {
+        zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
+        params___construct[0] = *files;
 
-    //     php_class_call_constructor(attribute_object, 1, params___construct);
-    //     efree(params___construct);
-    // }
+        php_class_call_constructor(files_object, 1, params___construct);
+        efree(params___construct);
+    } while(0);
 
-    // instance->common->attribute = attribute_object;
-    // /* }}} */   
-
-    // // zend_this_update_property("files", files);
-
-
-    // /* {{{ HEADERS */
-    // zend_object* header_object = php_class_init(
-    //     "Zpheur\\Schemes\\Http\\Foundation\\HeaderBag",
-    //     sizeof("Zpheur\\Schemes\\Http\\Foundation\\HeaderBag") - 1
-    // );
-    // {
-    //     zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
-    //     // ZVAL_ZVAL(&params___construct[0], server, 1, 0);
-    //     params___construct[0] = *server;
-
-    //     php_class_call_constructor(header_object, 1, params___construct);
-    //     efree(params___construct);
-    // }
-
-    // instance->common->header = header_object;
-    // /* }}} */
-
+    instance->common->files = files_object;
+    /* }}} */
 
     // /* {{{ SERVER */
     // Is actually use ServerBag
@@ -202,8 +184,7 @@ PHP_METHOD(Request, __construct)
     );
     do {
         zval* params___construct = safe_emalloc(1, sizeof(zval), 0);
-        zval arr_server; ZVAL_ARR(&arr_server, server);
-        params___construct[0] = arr_server;
+        params___construct[0] = *server;
 
         php_class_call_constructor(server_object, 1, params___construct);
         efree(params___construct);
@@ -227,34 +208,47 @@ PHP_METHOD(Request, __get)
 
     if( strncmp("input", property_src, sizeof("input") - 1) == 0 )
     {
-        // zval copy; ZVAL_OBJ(&copy, instance->common->input);
+        if( instance->common->input == NULL )
+            RETURN_NULL();
+
         instance->common->input->gc.refcount++; // Increase refcount for staying
         RETURN_OBJ(instance->common->input);
-        // RETURN_ZVAL(&copy, 1, 0);
     }
 
     if( strncmp("query", property_src, sizeof("query") - 1) == 0 )
     {
-        // zval copy; ZVAL_OBJ(&copy, instance->common->query);
+        if( instance->common->query == NULL )
+            RETURN_NULL();
+
         instance->common->query->gc.refcount++; // Increase refcount for staying
         RETURN_OBJ(instance->common->query);
-        // RETURN_ZVAL(&copy, 1, 0);
     }
 
     if( strncmp("cookie", property_src, sizeof("cookie") - 1) == 0 )
     {
-        // zval copy; ZVAL_OBJ(&copy, instance->common->cookie);
+        if( instance->common->cookie == NULL )
+            RETURN_NULL();
+
         instance->common->cookie->gc.refcount++; // Increase refcount for staying
         RETURN_OBJ(instance->common->cookie);
-        // RETURN_ZVAL(&copy, 1, 0);
+    }
+
+    if( strncmp("files", property_src, sizeof("files") - 1) == 0 )
+    {
+        if( instance->common->files == NULL )
+            RETURN_NULL();
+
+        instance->common->files->gc.refcount++; // Increase refcount for staying
+        RETURN_OBJ(instance->common->files);
     }
 
     if( strncmp("server", property_src, sizeof("server") - 1) == 0 )
     {
-        // zval copy; ZVAL_OBJ(&copy, instance->common->server);
+        if( instance->common->server == NULL )
+            RETURN_NULL();
+
         instance->common->server->gc.refcount++; // Increase refcount for staying
         RETURN_OBJ(instance->common->server);
-        // RETURN_ZVAL(&copy, 1, 0);
     }
 
     RETURN_NULL();
