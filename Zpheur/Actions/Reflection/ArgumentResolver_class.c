@@ -163,6 +163,8 @@ PHP_METHOD(ArgumentResolver, resolve)
         zend_hash_destroy(class_argument);
         FREE_HASHTABLE(class_argument);
 
+        /**
+        // A re-hash table for allowing free'd from method call
         HashTable* filled_argument_ref;
         ALLOC_HASHTABLE(filled_argument_ref);
         zend_hash_init(filled_argument_ref, 0, NULL, ZVAL_PTR_DTOR, 0);
@@ -173,6 +175,12 @@ PHP_METHOD(ArgumentResolver, resolve)
         efree(filled_argument);
 
         RETURN_ARR(filled_argument_ref);
+        **/
+
+        // Use convetion instead re-hash table and free zval ptr
+        zval copy; ZVAL_COPY(&copy, filled_argument);
+        efree(filled_argument);
+        RETURN_ARR(Z_ARR(copy));
     }
 
     RETURN_ARR(class_argument);
