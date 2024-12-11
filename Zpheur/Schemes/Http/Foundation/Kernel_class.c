@@ -5,6 +5,7 @@
 #include "ext/spl/spl_iterators.h"
 #include <Zend/zend_interfaces.h>
 
+
 // #include <Zend/zend_execute.h>
 // #include <Zend/zend_API.h>
 // #include <Zend/zend_modules.h>
@@ -665,9 +666,7 @@ PHP_METHOD(HttpKernel, terminate)
 	ZEND_PARSE_PARAMETERS_END();
 
 	if( EG(exception) )
-	{
 		zend_clear_exception();
-	}
 
     kernel_object* instance = 
         ZPHEUR_ZVAL_GET_OBJECT(kernel_object, getThis());
@@ -721,10 +720,7 @@ PHP_METHOD(HttpKernel, terminate)
 	} while(0); // Action constructor
 
 	if( EG(exception) )
-    { 
-    	php_error_docref(NULL, E_ERROR,
-    		"UncaughtError: Exception already thrown");
-    }
+		zend_clear_exception();
 
 	/* Call action method */
 	do {
@@ -785,15 +781,12 @@ PHP_METHOD(HttpKernel, terminate)
 		}
 	} while(0); // Action method
 
+	if( EG(exception) )
+    	zend_clear_exception();
+
 	zend_object_release(class_action);	
 	zend_string_release(class_name);
 	zend_string_release(method_name);
-
-	if( EG(exception) )
-	{
-    	php_error_docref(NULL, E_ERROR,
-    		"UncaughtError: Exception already thrown");
-	}
 
 	zval* after_middlewares =
 		php_class_call_method(action_resolver, "getAfterRequestMiddlewares", sizeof("getAfterRequestMiddlewares") - 1,
@@ -893,7 +886,10 @@ PHP_METHOD(HttpKernel, terminate)
 			efree(middleware_params_src);
 			zend_string_release(_zs_construct);
 			efree(params_resolve);
-		}
+		} // Call action constructor (middleware)
+
+		if( EG(exception) )
+	    	zend_clear_exception();
 
 		/* Call middleware method */
 		zval* local_return_action = NULL;
@@ -936,7 +932,10 @@ PHP_METHOD(HttpKernel, terminate)
 
 			efree(middleware_params_src);
 			zend_string_release(_zs_invoke);
-		} while(0);
+		} while(0); // Call action method (middleware)
+
+		if( EG(exception) )
+	    	zend_clear_exception();
 
 		zend_object_release(middleware_class);
 		zend_string_release(middleware_class_name);
