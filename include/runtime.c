@@ -268,12 +268,13 @@ zval* php_call_closure( zval* callable_func, zend_object* callable_obj, size_t p
     return NULL;
 }
 
+inline __attribute__ ((always_inline))
 zend_class_entry* php_class_exists( zend_string* class_name )
 {
-    zend_class_entry* class_entry;
     return zend_lookup_class(class_name);
 }
 
+// TODO improve args of class_name with fixed length given
 zend_class_entry* php_enum_init( char* const class_name )
 {
     zend_class_entry *ce;
@@ -297,6 +298,7 @@ zend_class_entry* php_enum_init( char* const class_name )
     return ce;
 }
 
+// TODO improve clean up resource
 void php_call_static_method( zend_object* object, char* const method_src, size_t method_len, zend_long param_counts, zval* params, zval* retval )
 {
     zval function_name;
@@ -312,106 +314,53 @@ void php_call_static_method( zend_object* object, char* const method_src, size_t
     // zval_ptr_dtor(&function_name);
 }
 
-zend_object *php_class_init_self_ex( char* const  class_name )
-{
-    zend_class_entry *ce;
-    zend_string *zstr_class_name;
-    zstr_class_name = zend_string_init(class_name, strlen(class_name), 0);
-
-    // Get the class entry
-    ce = zend_lookup_class(zstr_class_name);
-    
-    // Check if the class exists
-    if( ce == NULL )
-        return NULL;
-
-    ce->parent = NULL;
-    ce->destructor = NULL;
-
-    zval obj;
-    object_init_ex(&obj, ce);
-    zend_object *object = Z_OBJ_P(&obj);
-
-    return object;
-}
-
-zend_object *php_class_init_ex( char* const  class_name )
-{
-    zend_class_entry *ce;
-    zend_string *zstr_class_name;
-    zstr_class_name = zend_string_init(class_name, strlen(class_name), 0);
-
-    // Get the class entry
-    ce = zend_lookup_class(zstr_class_name);
-    
-    // Check if the class exists
-    if( ce == NULL )
-        return NULL;
-
-    ce->destructor = NULL;
-
-    zval obj;
-    object_init_ex(&obj, ce);
-    // zend_object *object = emalloc(sizeof(zend_object));
-    zend_object *object = Z_OBJ_P(&obj);
-
-    return object;
-}
-
 zend_object* php_class_init( char* class_name_src, size_t class_name_len )
 {
-    zend_string* class_name =
-        zend_string_init(class_name_src, class_name_len, 0);
-    zend_class_entry* ce = zend_lookup_class(class_name);
+    zval object;
+    zend_string* class_name;
+    zend_class_entry* ce;
+
+    class_name = zend_string_init(class_name_src, class_name_len, 0);
+    ce = zend_lookup_class(class_name);
     
-    // Check if the class exists
     if( ce == NULL )
         php_error_docref(NULL, E_ERROR, "Class \"%s\" not found", class_name->val);
 
-    // before it is used
-    ce->destructor = NULL;
-
-    //  Previous init
-    // zval _object;
-    // object_init_ex(&_object, ce);
-    // zend_object* object = Z_OBJ_P(&_object);
-    // return object;
-
-    // zval* object = e_calloc(1, sizeof(zend_object));
-    zval object;
     object_init_ex(&object, ce);
     zend_string_release(class_name);
+
     return Z_OBJ_P(&object);
 }
 
 zend_object* php_class_init_silent( char* class_name_src, size_t class_name_len )
 {
-    zend_string* class_name =
-        zend_string_init(class_name_src, class_name_len, 0);
-    zend_class_entry* ce = zend_lookup_class(class_name);
-    zend_string_release(class_name);
+    zval object;
+    zend_string* class_name;
+    zend_class_entry* ce;
+
+    class_name = zend_string_init(class_name_src, class_name_len, 0);
+    ce = zend_lookup_class(class_name);
     
-    // Check if the class exists
     if( ce == NULL )
         return NULL;
 
-    // before it is used
-    ce->destructor = NULL;
-
-    zval object;
     object_init_ex(&object, ce);
+    zend_string_release(class_name);
+
     return Z_OBJ_P(&object);
 }
 
 void php_class_call_constructor( zend_object* object, zend_long param_counts, zval* params )
 {
-    zend_string* method = zend_string_init("__construct", sizeof("__construct") - 1, 0);
     zval return_value;
-    zend_result result =  zend_call_method_if_exists(
+    zend_string* method;
+    zend_result result;
+
+    method = zend_string_init("__construct", sizeof("__construct") - 1, 0);
+    result = zend_call_method_if_exists(
         object, method, &return_value, param_counts, params
     );
 
-    // zend_object_
     zend_string_release(method);
 
     if( result == FAILURE )
@@ -439,17 +388,24 @@ void php_class_call_constructor( zend_object* object, zend_long param_counts, zv
 
 zval* php_class_call_method( zend_object* zend_object_class, char* const method_src, size_t method_len, zend_long param_counts, zval* params, bool silent )
 {
-    zend_string*    method          =  zend_string_init(method_src, method_len, 0);
-    zval*           return_value    =  (zval*)emalloc(sizeof(zval));
-    zend_result     result          =  zend_call_method_if_exists(
+    zval* return_value;
+    zend_string* method;
+    zend_result result;
+
+    return_value = (zval*)emalloc(sizeof(zval));
+    method = zend_string_init(method_src, method_len, 0);
+    result = zend_call_method_if_exists(
         zend_object_class, method, return_value, param_counts, params
     );
 
     zend_string_release(method);
 
     if( result != SUCCESS && !silent )
+    {
         php_error_docref(NULL,
-            E_CORE_ERROR, "Call to undefined method %s::%s()", zend_object_class->ce->name->val, method_src);
+            E_CORE_ERROR, "Call to undefined method %s::%s()",
+            zend_object_class->ce->name->val, method_src);
+    }
 
     // TODO: need improve error and exception throw to php-land
     do

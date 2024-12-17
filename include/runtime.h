@@ -81,14 +81,6 @@ void php_call_static_method(
     zval*               retval
 );
 
-zend_object* php_class_init_self_ex(
-    char* const         class_name
-);
-
-zend_object* php_class_init_ex(
-    char* const         class_name
-);
-
 zend_object* php_class_init_silent(
     char* class_name_src,
     size_t class_name_len 
