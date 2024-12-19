@@ -113,8 +113,10 @@ static PHP_MINIT_FUNCTION(zpheur)
 
 
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Console_DefaultAction)(INIT_FUNC_ARGS_PASSTHRU);
-  	
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Http_DefaultAction)(INIT_FUNC_ARGS_PASSTHRU);
+  	ZEND_MODULE_STARTUP_N(Zpheur_Actions_WebSocket_DefaultAction)(INIT_FUNC_ARGS_PASSTHRU);
+
+
 	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Middleware_Next)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Middleware)(INIT_FUNC_ARGS_PASSTHRU);
 

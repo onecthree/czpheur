@@ -56,8 +56,9 @@ ZEND_FUNCTION(zpheur_version);
 
 
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Console_DefaultAction);
-
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Http_DefaultAction);
+ZEND_MINIT_FUNCTION(Zpheur_Actions_WebSocket_DefaultAction);
+
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Middleware_Next);
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Middleware);
 

@@ -18,7 +18,9 @@
 #define LOCALVERB_PUT       808584
 #define LOCALVERB_PATCH     8065846772
 #define LOCALVERB_DELETE    686976698469
+#define LOCALVERB_HEAD      72696568
 #define LOCALVERB_OPTIONS   79808473797883
+#define LOCALVERB_WEBSOCKET 876966837967756984
 
 PHP_METHOD(Route, __construct)
 {
@@ -62,12 +64,26 @@ PHP_METHOD(Route, __construct)
     ZVAL_ARR(&target_deletes, deletes);
     zend_hash_str_update(Z_ARR_P(routes), "DELETE", sizeof("DELETE") - 1, &target_deletes);
 
+    HashTable* head;
+    ALLOC_HASHTABLE(head);
+    zend_hash_init(head, 0, NULL, ZVAL_PTR_DTOR, 0);
+    zval target_head;
+    ZVAL_ARR(&target_head, head);
+    zend_hash_str_update(Z_ARR_P(routes), "HEAD", sizeof("HEAD") - 1, &target_head);
+
     HashTable* options;
     ALLOC_HASHTABLE(options);
     zend_hash_init(options, 0, NULL, ZVAL_PTR_DTOR, 0);
     zval target_options;
     ZVAL_ARR(&target_options, options);
     zend_hash_str_update(Z_ARR_P(routes), "OPTIONS", sizeof("OPTIONS") - 1, &target_options);
+
+    HashTable* websocket;
+    ALLOC_HASHTABLE(websocket);
+    zend_hash_init(websocket, 0, NULL, ZVAL_PTR_DTOR, 0);
+    zval target_websocket;
+    ZVAL_ARR(&target_websocket, websocket);
+    zend_hash_str_update(Z_ARR_P(routes), "WEBSOCKET", sizeof("WEBSOCKET") - 1, &target_websocket);
 
     HashTable* middlewares;
     ALLOC_HASHTABLE(middlewares);
@@ -226,12 +242,10 @@ PHP_METHOD(Route, middleware)
 
 PHP_METHOD(Route, add)
 {
-    zend_ulong method = 0;
-
-    char*   uri_src = NULL;
-    size_t  uri_len = 0;
-
-    zval*   action;
+    zend_long method = 0;
+    char* uri_src = NULL;
+    size_t uri_len = 0;
+    zval* action;
 
     ZEND_PARSE_PARAMETERS_START(3, 3)
         Z_PARAM_LONG(method)
@@ -239,19 +253,19 @@ PHP_METHOD(Route, add)
         Z_PARAM_ZVAL(action)
     ZEND_PARSE_PARAMETERS_END();
 
-    char*    http_method_src = NULL;
-    size_t   http_method_len = 0;
+    char* http_method_src = NULL;
+    size_t http_method_len = 0;
 
-    char*    target_class_src = NULL;
-    size_t   target_class_len = 0;
+    char* target_class_src = NULL;
+    size_t target_class_len = 0;
 
-    char*    target_method_src = NULL;
-    size_t   target_method_len = 0;
+    char* target_method_src = NULL;
+    size_t target_method_len = 0;
 
-    zval*           target_class;
-    zval*           target_method;
-    zend_object*    target_class_init;
-    bool            target_valid = false;
+    zval* target_class;
+    zval* target_method;
+    zend_object* target_class_init;
+    bool target_valid = false;
 
     switch( method )
     {
@@ -280,13 +294,21 @@ PHP_METHOD(Route, add)
             http_method_src = "DELETE";
             http_method_len = sizeof("DELETE") - 1;
         break;
+        case LOCALVERB_HEAD:
+            http_method_src = "HEAD";
+            http_method_len = sizeof("HEAD") - 1;
+        break;
         // case 87921763:
         case LOCALVERB_OPTIONS:
             http_method_src = "OPTIONS";
             http_method_len = sizeof("OPTIONS") - 1;
         break;
+        case LOCALVERB_WEBSOCKET:
+            http_method_src = "WEBSOCKET";
+            http_method_len = sizeof("WEBSOCKET") - 1;
+        break;
         default:
-            php_error_docref(NULL, E_ERROR, "Method are undefined");
+            php_error_docref(NULL, E_ERROR, "method are undefined");
         break;
     }
 
@@ -349,7 +371,6 @@ PHP_METHOD(Route, add)
         static_furouter_route_uri_parse(uri_src, target_class_src, target_method_src);
 
     zend_this_update_property("action_class", target_class);
-
     zend_this_update_property("action_method", target_method);    
 
     zval target_action;
@@ -359,7 +380,12 @@ PHP_METHOD(Route, add)
     add_next_index_zval(&target_action, target_method);
 
     zval* routes = zend_this_read_property("routes");
-    zval* routes_per_method = zend_hash_str_find(Z_ARR_P(routes), http_method_src, http_method_len);
+
+    if(! zend_hash_str_exists(Z_ARR_P(routes), http_method_src, http_method_len) )
+        php_error_docref(NULL, E_ERROR, "'%s' method are undefined", http_method_src);
+
+    zval* routes_per_method = 
+        zend_hash_str_find(Z_ARR_P(routes), http_method_src, http_method_len);
 
     zend_hash_str_update(Z_ARR_P(routes_per_method), compiled_route->val, compiled_route->len - 1, &target_action);
 
@@ -454,7 +480,7 @@ PHP_METHOD(Route, tryVerbFromString)
     ZEND_PARSE_PARAMETERS_END();
 
     unsigned long http_verb_repnum =
-        string_to_digits(http_verb_src, http_verb_len, LOCALVERB_OPTIONS);
+        string_to_digits(http_verb_src, http_verb_len, LOCALVERB_WEBSOCKET);
 
     switch( http_verb_repnum )
     {
@@ -463,7 +489,9 @@ PHP_METHOD(Route, tryVerbFromString)
         case LOCALVERB_PUT:
         case LOCALVERB_PATCH:
         case LOCALVERB_DELETE:
+        case LOCALVERB_HEAD:
         case LOCALVERB_OPTIONS:
+        case LOCALVERB_WEBSOCKET:
             RETURN_LONG(http_verb_repnum); 
         break;
     }
