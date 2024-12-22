@@ -41,23 +41,61 @@ typedef struct _container_object
     zend_object std;
 } container_object;
 
-void free_container_object(zend_object *object)
+void free_container_object_context( container_t* container )
 {
-    container_object* instance = ZPHEUR_GET_OBJECT(container_object, object);
-
-    zend_object_std_dtor(&instance->std);
-    // if( instance->container && instance->container->clean_up == true )
-    if( instance->container )
+    if( container )
     {
-        for( int i = 0; i < instance->container->classes_len; i++ )
-        {
-            container_class_pack pack = instance->container->classes_src[i];
-            onec_string_release(pack.class_name);
+        for( int i = 0; i < container->classes_len; i++ ) {
+            container_class_pack pack = container->classes_src[i];
+            php_class_call_dtor(pack.object);
             zend_object_release(pack.object);
+            onec_string_release(pack.class_name);
         }
+        container->classes_len = 0;
 
-        for( int i = 0; i < instance->container->scalars_len; i++ )
-        {
+        for( int i = 0; i < container->scalars_len; i++ ) {
+            container_scalar_pack pack = container->scalars_src[i];
+
+            if( Z_ISREF_P(pack.value) ) {
+                zend_unwrap_reference(pack.value);
+            }
+
+            zend_uchar type = Z_TYPE_P(pack.value);
+
+            if( (1 << type) & (BITW_IS_ARRAY) ) {
+                zend_hash_destroy(Z_ARR_P(pack.value));
+                FREE_HASHTABLE(Z_ARR_P(pack.value));
+            }
+
+            if( (1 << type) & (BITW_IS_STRING) ) {
+                zend_string_release(Z_STR_P(pack.value));
+            }
+
+            efree(pack.value);
+            onec_string_release(pack.scalar_name);
+        }
+        container->scalars_len = 0;
+
+        efree(container);
+    }
+}
+
+void free_container_object( zend_object* object )
+{
+    // php_printf("clean up from free container\n");
+    container_object* instance = ZPHEUR_GET_OBJECT(container_object, object);
+    zend_object_std_dtor(&instance->std);
+
+    if( instance->container ) {
+        for( int i = 0; i < instance->container->classes_len; i++ ) {
+            container_class_pack pack = instance->container->classes_src[i];
+            php_class_call_dtor(pack.object);
+            zend_object_release(pack.object);
+            onec_string_release(pack.class_name);
+        }
+        instance->container->classes_len = 0;
+
+        for( int i = 0; i < instance->container->scalars_len; i++ ) {
             container_scalar_pack pack = instance->container->scalars_src[i];
 
             if( Z_ISREF_P(pack.value) )
@@ -65,20 +103,19 @@ void free_container_object(zend_object *object)
 
             zend_uchar type = Z_TYPE_P(pack.value);
 
-            if( (1 << type) & (BITW_IS_ARRAY) )
-            {
+            if( (1 << type) & (BITW_IS_ARRAY) ) {
                 zend_hash_destroy(Z_ARR_P(pack.value));
                 FREE_HASHTABLE(Z_ARR_P(pack.value));
             }
 
-            if( (1 << type) & (BITW_IS_STRING) )
-            {
+            if( (1 << type) & (BITW_IS_STRING) ) {
                 zend_string_release(Z_STR_P(pack.value));
             }
 
             efree(pack.value);
             onec_string_release(pack.scalar_name);
         }
+        instance->container->scalars_len = 0;
 
         efree(instance->container);
     }
@@ -170,10 +207,12 @@ container_class_find( container_t* container, zend_string* name )
     for( int i = 0; i < container->classes_len; i++ )
     {
         container_class_pack pack = container->classes_src[i];
-        if( zend_string_equals_cstr(name, pack.class_name->val, pack.class_name->len) )
-        {
-            if( pack.object->gc.refcount < 1 )
+        if( zend_string_equals_cstr(name, pack.class_name->val, pack.class_name->len) ||
+            (pack.object->ce->parent && zend_string_equals(name, pack.object->ce->parent->name)) ) {
+
+            if( pack.object->gc.refcount < 1 ) {
                 pack.object->gc.refcount++;
+            }
             return pack.object;
         }
     }
@@ -206,7 +245,8 @@ container_class_add_service( container_t* container, char* name_src, size_t name
         container_class_pack pack = container->classes_src[i];
         if( zend_string_equals_cstr(name, pack.class_name->val, pack.class_name->len) )
         {
-            // zend_object_release(pack.object);
+            zend_object_release(pack.object);
+            pack.object = NULL;
             pack.object = Z_OBJ_P(service);
             goto no_add;
         }
@@ -295,11 +335,119 @@ container_scalar_add_service( container_t* container, char* name_src, size_t nam
 
 PHP_METHOD(Container, getService)
 {
+    char* name_src = NULL;
+    size_t name_len = 0;
+    zval service;
+
+    ZEND_PARSE_PARAMETERS_START(1, 1)
+        Z_PARAM_STRING(name_src, name_len)
+    ZEND_PARSE_PARAMETERS_END();
+
+    container_object* instance = ZPHEUR_ZVAL_GET_OBJECT(container_object, getThis());
+    zend_object* argument_resolver = instance->container->argument_resolver;
+
+    zend_string* service_name = zend_string_init(name_src, name_len, 0);
+    ZVAL_UNDEF(&service);
+
+    zend_object* argument_class;
+    zval* argument_scalar;
+
+    if( zend_string_equals_cstr(service_name, CONTAINER_CLASS_NAME_SRC, CONTAINER_CLASS_NAME_LEN) )
+    {   
+        ZVAL_COPY(&service, getThis());
+        goto end_check;
+    }
+
+    // If class exists 
+    if( (argument_class = container_class_find(instance->container, service_name)) )
+    {   
+        ZVAL_OBJ(&service, argument_class);
+        Z_ADDREF_P(&service); // Try to increment for long-live scope
+        goto end_check;
+    }
+
+    // If scalar exists
+    if( (argument_scalar = container_scalar_find(instance->container, service_name)) )
+    {
+        Z_ADDREF_P(argument_scalar);
+        ZVAL_COPY(&service, argument_scalar);
+        goto end_check;
+    }
+
+    zend_object* target_class =
+        php_class_init_silent(service_name->val, service_name->len);
+
+    if( target_class )
+    {   
+        zval* params_resolve = safe_emalloc(2, sizeof(zval), 0);
+        zval zv_service_name; ZVAL_STR(&zv_service_name, service_name);
+        params_resolve[0] = zv_service_name;
+        zend_string* __construct = zend_string_init("__construct", sizeof("__construct") - 1, 0);
+        zval zv___construct; ZVAL_STR(&zv___construct, __construct);
+        params_resolve[1] = zv___construct;
+
+        zval* params_of_resolve =
+            php_class_call_method(argument_resolver,
+                "resolve", sizeof("resolve") - 1,
+                2, params_resolve, 0
+            );
+
+        efree(params_resolve);
+        zend_string_release(__construct);
+
+        if( Z_TYPE_P(params_of_resolve) == IS_NULL )
+        {
+            php_class_call_constructor(target_class, 0, NULL);
+        }
+        else
+        {
+            zend_long params_num = zend_hash_num_elements(Z_ARR_P(params_of_resolve));
+            zval* params___construct = safe_emalloc(params_num, sizeof(zval), 0);
+            ZEND_HASH_FOREACH_NUM_KEY_VAL(Z_ARR_P(params_of_resolve), zend_long index, zval* service)
+            {
+                params___construct[index] = *service;
+            }
+            ZEND_HASH_FOREACH_END();
+            php_class_call_constructor(target_class, params_num, params___construct);
+
+            zend_hash_destroy(Z_ARR_P(params_of_resolve));
+            FREE_HASHTABLE(Z_ARR_P(params_of_resolve));
+            efree(params___construct);
+        }
+        efree(params_of_resolve);
+
+        zval* return_self =
+            php_class_call_method(target_class, "servicePin", sizeof("servicePin") - 1, 0, NULL, 0);
+
+        container_class_add_service(instance->container, service_name->val, service_name->len, return_self);
+        // ZVAL_COPY(&service, return_self);
+        service = *return_self;
+
+        efree(return_self);
+    }
+    else // class are not exists
+    {
+        php_error_docref(NULL, E_ERROR, 
+            "parameter ($%s) not found in container list or class does not exist", service_name->val
+        );
+    }
+
+    zend_object_release(target_class);
+
+    end_check:
+    zend_string_release(service_name);
+
+    RETURN_ZVAL(&service, 0, 0);
+}
+
+PHP_METHOD(Container, getServiceFromArray)
+{
     HashTable* names;
 
     ZEND_PARSE_PARAMETERS_START(1, 1)
         Z_PARAM_ARRAY_HT(names)
     ZEND_PARSE_PARAMETERS_END();
+
 
     HashTable* arguments;
     // ALLOC_HASHTABLE(arguments);
@@ -458,139 +606,6 @@ PHP_METHOD(Container, listAllServices)
     RETURN_ARR(services);
 }
 
-PHP_METHOD(Container, addServiceFromArray)
-{
-    HashTable* services;
-    bool is_scalar = false;
-
-    ZEND_PARSE_PARAMETERS_START(1, 2)
-        Z_PARAM_ARRAY_HT(services)
-        Z_PARAM_OPTIONAL
-        Z_PARAM_BOOL(is_scalar)
-    ZEND_PARSE_PARAMETERS_END();
-
-    container_object* instance =
-        ZPHEUR_ZVAL_GET_OBJECT(container_object, getThis());
-
-    if(! is_scalar )
-    {
-        ZEND_HASH_FOREACH_STR_KEY_VAL(services, zend_string* name, zval* service)
-        {   
-            zend_uchar type = Z_TYPE_P(service);
-
-            if(! ((1 << type) & (1 << IS_OBJECT)) )
-            {
-                php_error_docref(NULL, E_ERROR,
-                    "service must be type of object, %s given for key ($%s)", ZTYPE_TO_STR(type), name->val);
-            }
-
-            // TODO: handle "name" for classable name or class exists
-            // if( ... )
-
-            container_class_add_service(instance->container, name->val, name->len, service);
-        }
-        ZEND_HASH_FOREACH_END();
-    }
-    else // If scalar
-    {
-        ZEND_HASH_FOREACH_STR_KEY_VAL(services, zend_string* name, zval* service)
-        {   
-            zend_long type = Z_TYPE_P(service);
-
-            if( (1 << type) & BITW_IS_OBJECT )
-            {
-                php_error_docref(NULL, E_ERROR,
-                    "service must be type of string, double or integer, %s given for key ($%s)", 
-                    ZTYPE_TO_STR(type), name->val
-                );
-                RETURN_THROWS();
-            }
-
-            if( (1 << type) & BITW_IS_ARRAY )
-            {
-                ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(service), zend_string* last_key, zval* _value)
-                {
-                    zend_uchar type = Z_TYPE_P(_value);
-                    if(! ((1 << type) & (BITW_IS_LONG | BITW_IS_DOUBLE | BITW_IS_STRING)) )
-                    {
-                        php_error_docref(NULL, E_ERROR,
-                            "parameter ($value) must be an array with only string, double, or integer member type, %s given for key ($%s)",
-                            ZTYPE_TO_STR(type), last_key->val
-                        );
-                        RETURN_THROWS();
-                    }
-                }
-                ZEND_HASH_FOREACH_END();
-            }
-
-            container_scalar_add_service(instance->container, name->val, name->len, service);
-        }
-        ZEND_HASH_FOREACH_END();
-    }
-}
-
-PHP_METHOD(Container, addService)
-{
-    char*       name_src;
-    size_t      name_len;
-    zval*       value;
-    bool        is_scalar = false;
-
-    ZEND_PARSE_PARAMETERS_START(2, 3)
-        Z_PARAM_STRING(name_src, name_len)
-        Z_PARAM_ZVAL(value)
-        Z_PARAM_OPTIONAL
-        Z_PARAM_BOOL(is_scalar)
-    ZEND_PARSE_PARAMETERS_END();
-
-    container_object* instance =
-        ZPHEUR_ZVAL_GET_OBJECT(container_object, getThis());
-
-    if(! is_scalar )
-    {
-        if( zend_string_equals_cstr(instance->std.ce->name, name_src, name_len) )
-        {
-            goto early_return;
-        }
-
-        // TODO if class exists
-        container_class_add_service(instance->container, name_src, name_len, value);
-    }
-    else
-    {
-        zend_long type = Z_TYPE_P(value);
-
-        if( (1 << type) & BITW_IS_OBJECT )
-        {
-            php_error_docref(NULL, E_ERROR,
-                "parameter ($value) must be of a scalar type, %s given", ZTYPE_TO_STR(type));
-            RETURN_THROWS();
-        }
-
-        if( (1 << type) & BITW_IS_ARRAY )
-        {
-            ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(value), zend_string* last_key, zval* _value)
-            {
-                zend_uchar type = Z_TYPE_P(_value);
-                if(! ((1 << type) & (BITW_IS_LONG | BITW_IS_DOUBLE | BITW_IS_STRING)) )
-                {
-                    php_error_docref(NULL, E_ERROR,
-                        "parameter ($value) must be an array with only string, double, or integer member type, %s given for key ($%s)",
-                        ZTYPE_TO_STR(type), last_key->val
-                    );
-                    RETURN_THROWS();
-                }
-            }
-            ZEND_HASH_FOREACH_END();
-        }
-
-        container_scalar_add_service(instance->container, name_src, name_len, value);
-    }
-
-    early_return:
-    RETURN_ZVAL(getThis(), 1, 0);
-}
-
 PHP_METHOD(Container, setClass)
 {
     zval* service = NULL;
@@ -629,21 +644,22 @@ PHP_METHOD(Container, setScalar)
             );
         }
 
-        if( EXPECTED(HT_IS_PACKED(Z_ARR_P(value))) )
-        {
-            php_error_docref(NULL, E_ERROR,
-                "Argument #2 ($value) must be type array of key-value instead packed array"
-            );
-        }
+        // if( EXPECTED(HT_IS_PACKED(Z_ARR_P(value))) )
+        // {
+        //     php_error_docref(NULL, E_ERROR,
+        //         "Argument #2 ($value) must be type array of key-value instead packed array"
+        //     );
+        // }
 
-        ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(value), zend_string* key, zval* _value )
+        // ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARR_P(value), zend_string* key, zval* _value )
+        ZEND_HASH_FOREACH_KEY_VAL(Z_ARR_P(value), zend_long index, zend_string* key, zval* _value)
         {
-            if(! key )
-            {
-                php_error_docref(NULL, E_ERROR,
-                    "Key of array from argument #2 ($value) must be type of string"
-                );
-            }
+            // if(! key )
+            // {
+            //     php_error_docref(NULL, E_ERROR,
+            //         "Key of array from argument #2 ($value) must be type of string"
+            //     );
+            // }
 
             if( !( (1 << Z_TYPE_P(_value)) & 
                 (BITW_IS_STRING | BITW_IS_LONG | BITW_IS_DOUBLE)) )
@@ -749,7 +765,8 @@ PHP_METHOD(Container, setScalarFromArray)
         if( Z_TYPE_P(value) == IS_ARRAY )
         {
             php_error_docref(NULL, E_ERROR,
-                "Array value of argument #1 ($values) is array, use Zpheur\\Dependencies\\ServiceLocator\\Container::setScalar() instead"
+                "Array value of argument #1 ($values) from key ($%s) is array, use Zpheur\\Dependencies\\ServiceLocator\\Container::setScalar() instead",
+                key->val
             );
         } else
         if( !( (1 << Z_TYPE_P(value)) & 
@@ -790,9 +807,11 @@ PHP_METHOD(Container, hasService)
     RETURN_FALSE;
 }
 
-PHP_METHOD(Container, __destruct)
+PHP_METHOD(Container, clean)
 {
     ZEND_PARSE_PARAMETERS_NONE();
+    container_object* instance = ZPHEUR_ZVAL_GET_OBJECT(container_object, getThis());
+    free_container_object_context(instance->container);
 }
 
 ZEND_MINIT_FUNCTION(Zpheur_Dependencies_ServiceLocator_Container)
@@ -803,10 +822,6 @@ ZEND_MINIT_FUNCTION(Zpheur_Dependencies_ServiceLocator_Container)
     zpheur_dependencies_servicelocator_container_class_entry = zend_register_internal_class(&ce);
     zpheur_dependencies_servicelocator_container_class_entry->ce_flags |= ZEND_ACC_NO_DYNAMIC_PROPERTIES;
     zpheur_dependencies_servicelocator_container_class_entry->create_object = create_container_object;
-
-    // zend_declare_property_null(zpheur_dependencies_servicelocator_container_class_entry, "classes", sizeof("classes") - 1, ZEND_ACC_PUBLIC);
-    // zend_declare_property_null(zpheur_dependencies_servicelocator_container_class_entry, "scalars", sizeof("scalars") - 1, ZEND_ACC_PUBLIC);
-    zend_declare_property_null(zpheur_dependencies_servicelocator_container_class_entry, "argumentResolver", sizeof("argumentResolver") - 1, ZEND_ACC_PUBLIC);
 
     return SUCCESS;
 }
