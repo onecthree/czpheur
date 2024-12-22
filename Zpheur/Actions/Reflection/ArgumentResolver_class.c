@@ -157,7 +157,7 @@ PHP_METHOD(ArgumentResolver, resolve)
 
         zval* filled_argument =
             php_class_call_method(instance->common->container, 
-                "getService", sizeof("getService") - 1, 1, params_getService, 0);
+                "getServiceFromArray", sizeof("getServiceFromArray") - 1, 1, params_getService, 0);
         efree(params_getService);
 
         zend_hash_destroy(class_argument);
@@ -208,11 +208,6 @@ PHP_METHOD(ArgumentResolver, addSegmentsToServicesContainer)
         efree(params_addServiceFromArray);
         efree(return_from);
     }
-}
-
-PHP_METHOD(ArgumentResolver, __destruct)
-{
-    zend_this_unset_property("container");
 }
 
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Reflection_ArgumentResolver)
