@@ -386,6 +386,40 @@ void php_class_call_constructor( zend_object* object, zend_long param_counts, zv
     return_void: { }
 }
 
+void php_class_call_dtor( zend_object* object )
+{
+    zval return_value;
+    zend_string* method;
+    zend_result result;
+
+    method = zend_string_init("__destruct", sizeof("__destruct") - 1, 0);
+    result = zend_call_method_if_exists(object, method, &return_value, 0, NULL);
+
+    zend_string_release(method);
+
+    if( result == FAILURE )
+        goto return_void;
+
+    if( EG(exception) )
+    { 
+        zend_object* error_exception = EG(exception);
+
+        if( zend_hash_num_elements(&error_exception->ce->properties_info) )
+        {
+            zval* exception_msg = zend_target_read_property_ex(zend_ce_exception, error_exception, "message");
+
+            if( Z_TYPE_P(exception_msg) != IS_STRING )
+                zend_bailout();
+        }
+        else
+        {
+            zend_bailout();
+        }
+    }
+    
+    return_void: { }
+}
+
 zval* php_class_call_method( zend_object* zend_object_class, char* const method_src, size_t method_len, zend_long param_counts, zval* params, bool silent )
 {
     zval* return_value;

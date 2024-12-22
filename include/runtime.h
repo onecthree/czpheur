@@ -97,6 +97,8 @@ void php_class_call_constructor(
     zval*               params
 );
 
+void php_class_call_dtor( zend_object* object );
+
 zval* php_class_call_method(
     zend_object*        zend_object_class, 
     char* const         method_src,
