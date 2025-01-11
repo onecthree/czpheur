@@ -36,7 +36,6 @@ static PHP_GINIT_FUNCTION(zpheur)
 	array_init(&(zpheur_globals->CSRF));
 }
 
-#include <Zpheur/DataTransforms/Dotenv/Env_arginfo.h>
 #include <Zpheur/Functions/httpverb_arginfo.h>
 #include <Zpheur/Functions/is_appns_arginfo.h>
 #include <Zpheur/Functions/clfile_arginfo.h>
@@ -45,6 +44,13 @@ static PHP_GINIT_FUNCTION(zpheur)
 #include <Zpheur/Strings/contains_arginfo.h>
 
 #include <Zpheur/Encryptions/Random/Generator/csrf_token_arginfo.h>
+
+HashTable* zpheur_fake_get_gc( zend_object* zobj, zval** table, int* n )
+{
+	*n = 0;
+	*table = NULL;
+	return NULL;
+}
 
 PHP_INI_MH(OnUpdateZpheurIniHandleEntryMain)
 {
@@ -59,7 +65,6 @@ PHP_INI_BEGIN()
 PHP_INI_END();
 
 static const zend_function_entry ext_functions[] = {
-	ZEND_NS_FE("Zpheur\\DataTransforms\\Dotenv", env, env_arginfo)
 	ZEND_NS_FE("Zpheur\\Globals", httpverb, httpverb_arginfo)
 	ZEND_NS_FE("Zpheur\\Globals", is_appns, is_appns_arginfo)
 	ZEND_NS_FE("Zpheur\\Globals", clfile, arginfo_clfile)
@@ -129,7 +134,7 @@ static PHP_MINIT_FUNCTION(zpheur)
   	ZEND_MODULE_STARTUP_N(Zpheur_Consoles_Input_InputArgument)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Consoles_Runtime_Application)(INIT_FUNC_ARGS_PASSTHRU);
 	
-	ZEND_MODULE_STARTUP_N(Zpheur_DataTransforms_Dotenv_Dotenv)(INIT_FUNC_ARGS_PASSTHRU);
+	ZEND_MODULE_STARTUP_N(Zpheur_DataTransforms_Dotenv)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Dependencies_ServiceLocator_Container)(INIT_FUNC_ARGS_PASSTHRU);
 	
 	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Foundation_ParameterBag)(INIT_FUNC_ARGS_PASSTHRU);

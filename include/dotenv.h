@@ -119,9 +119,15 @@ typedef struct
 
 typedef struct
 {
-	onec_string*	lvalue;
-	onec_string*	rvalue;
+	onec_string* lvalue;
+	onec_string* rvalue;
 } dotenv_value;
+
+typedef struct
+{
+	onec_stringlc* lvalue;
+	onec_stringlc* rvalue;
+} dotenvlc_value;
 
 typedef struct
 {
@@ -136,15 +142,17 @@ inline static void tcast_check(
 );
 
 int dotenv_unsafe_parse(
-	char* const 	filename_env,
-	HashTable** 	target_key_value,
-	HashTable** 	target_comments,
-	bool 			save_comment,
-	bool 			type_cast
+	char* source_path_src,
+	size_t source_path_len,
+	HashTable** target_key_value,
+	HashTable** target_comments,
+	bool save_comment,
+	bool type_cast
 );
 
 int dotenv_safe_parse(
-	char* const 	filename_env,
+	char*			source_path_src,
+	size_t 			source_path_len,
 	HashTable** 	target_key_value,
 	HashTable** 	target_comments,
 	bool 			save_comment,

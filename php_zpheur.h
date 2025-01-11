@@ -71,7 +71,7 @@ ZEND_MINIT_FUNCTION(Zpheur_Caches_Adapter_Filesystem);
 ZEND_MINIT_FUNCTION(Zpheur_Consoles_Input_InputArgument);
 ZEND_MINIT_FUNCTION(Zpheur_Consoles_Runtime_Application);
 
-ZEND_MINIT_FUNCTION(Zpheur_DataTransforms_Dotenv_Dotenv);
+ZEND_MINIT_FUNCTION(Zpheur_DataTransforms_Dotenv);
 ZEND_MINIT_FUNCTION(Zpheur_Dependencies_ServiceLocator_Container);
 
 ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Foundation_ParameterBag);
@@ -125,6 +125,8 @@ ZEND_MINIT_FUNCTION(Zpheur_Logs_StreamLog_Level);
 
 // [propose]
 // ZEND_MINIT_FUNCTION(Zpheur_DataTransforms_Dotenv_env);
+
+HashTable* zpheur_fake_get_gc( zend_object* zobj, zval** table, int* n);
 
 #if defined(ZTS) && defined(COMPILE_DL_ZPHEUR)
 ZEND_TSRMLS_CACHE_EXTERN()

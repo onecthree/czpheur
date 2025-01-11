@@ -68,7 +68,6 @@ if test "$PHP_ZPHEUR" != "no"; then
   PHP_NEW_EXTENSION(
     [zpheur], 
     [                                                                   \
-      Zpheur/DataTransforms/Dotenv/Env_function.c                       \
       Zpheur/Functions/httpverb_function.c                              \
       Zpheur/Functions/is_appns_function.c                              \
       Zpheur/Functions/clfile_function.c                                \
@@ -86,7 +85,7 @@ if test "$PHP_ZPHEUR" != "no"; then
       Zpheur/Caches/Adapter/Filesystem_class.c                          \
       Zpheur/Consoles/Input/InputArgument_class.c                       \
       Zpheur/Consoles/Runtime/Application_class.c                       \
-      Zpheur/DataTransforms/Dotenv/Dotenv_class.c                       \
+      Zpheur/DataTransforms/Dotenv_class.c                              \
       Zpheur/Dependencies/ServiceLocator/Container_class.c              \
       Zpheur/Schemes/Http/Foundation/ParameterBag_class.c               \
       Zpheur/Schemes/Http/Foundation/HeaderBag_class.c                  \

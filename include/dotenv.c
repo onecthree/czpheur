@@ -46,22 +46,22 @@ tcast_check( int64_t* tcast_bool_inc, int* tcast_numeric_state,  dotenv_context*
 	}
 }
 
-int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value, HashTable** target_comments, bool save_comment, bool type_cast )
+int dotenv_unsafe_parse( char* source_path_src, size_t source_path_len, HashTable** target_key_value, HashTable** target_comments, bool save_comment, bool type_cast )
 {
-	FILE*   file_env = fopen(filename_env, "r");
-	int		error_no = -1;
-	size_t 	error_line, error_column;
+	FILE* file_env = fopen(source_path_src, "r");
+	int error_no = -1;
+	size_t error_line, error_column;
+	// onec_string_getlc
 
 	// On fopen error call 
-	if( !file_env )
-	{
+	if( !file_env ) {
 		error_no = 0;
 		goto exit_parse;
 	}
 
 	// Type cast
-	int64_t      tcast_bool_inc		 = 0;
-	int          tcast_numeric_state = 0;
+	int64_t tcast_bool_inc = 0;
+	int tcast_numeric_state = 0;
 
 	onec_stringlc de_comment;
 	onec_string_initlc(de_comment);
@@ -70,32 +70,28 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
     onec_string_initlc(de_lvalue);
     onec_string_initlc(de_rvalue);
 
-	dotenv_context*
-		context 					= (dotenv_context*)malloc(sizeof(dotenv_context));
-		context->state    			= STATE_INIT_SCOPE;
-		context->under_comment      = false;
-		context->line 				= 1;
+	dotenv_context* context = (dotenv_context*)malloc(sizeof(dotenv_context));
+	context->state = STATE_INIT_SCOPE;
+	context->under_comment = false;
+	context->line = 1;
 
-	dotenv_value*
-		value               = (dotenv_value*)malloc(sizeof(dotenv_value));
-	dotenv_value_context*
-		value_context       = (dotenv_value_context*)malloc(sizeof(dotenv_value_context));
-
-	int increments			= 0;
-
+	// dotenvlc_value value = (dotenv_value*)malloc(sizeof(dotenv_value));
+	dotenvlc_value value;
+	dotenv_value_context* value_context = (dotenv_value_context*)malloc(sizeof(dotenv_value_context));
+	int increments = 0;
 
 	while( (context->input = fgetc(file_env)) )
 	{
 		if( context->state == STATE_INIT_SCOPE )
 		{
 			context->prev_state	= STATE_BEGIN_INDENTIFIER_SCOPE;
-			context->state		= STATE_COMMENT_SCOPE;
+			context->state = STATE_COMMENT_SCOPE;
 
-			context->column			= 0;
+			context->column = 0;
 			context->under_comment	= false;
 
-            value->rvalue           = NULL;
-            value->lvalue           = NULL;
+            value.rvalue = NULL;
+            value.lvalue = NULL;
 
 			value_context->under_single_quote = false;
 			value_context->under_double_quote = false;
@@ -120,8 +116,10 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 							#else
 							// Fetch over here for php
 							onec_string_trimlc(de_comment);
-							zval comment;
-							ZVAL_STRINGL(&comment, de_comment.val, de_comment.len);
+							// zval comment;
+							// ZVAL_STRINGL(&comment, de_comment.val, de_comment.len);
+							zend_string* _comment = zend_string_init(de_comment.val, de_comment.len, 0);
+							zval comment; ZVAL_STR(&comment, _comment);
 							zend_hash_index_update((*target_comments), context->line, &comment);
 							#endif
 							onec_string_resetlc(de_comment);	
@@ -246,19 +244,22 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 			break;
 			case STATE_OPERATOR_SCOPE:
 				context->state = STATE_FIND_VALUE_SCOPE;
-                value->lvalue = onec_string_initd(de_lvalue.val, de_lvalue.len);
+                // value->lvalue = onec_string_initd(de_lvalue.val, de_lvalue.len);
+                value.lvalue = &de_lvalue;
 			break;
 			case STATE_FIND_VALUE_SCOPE:
 				switch( context->input )
 				{	
 					case TOKEN_SYMBOL_EOF:
 						context->state = STATE_EOF_SCOPE;
-						value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						// value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						value.rvalue = &de_rvalue;
 						fseek(file_env, -1, SEEK_CUR);
 					break;
 					case TOKEN_SYMBOL_NEWLINE:
 						context->state = STATE_NEWLINE_SCOPE;
-						value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						// value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						value.rvalue = &de_rvalue;
 						fseek(file_env, -1, SEEK_CUR);
 					break;
 					case TOKEN_SYMBOL_TABSPACE:
@@ -292,12 +293,14 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 				{
 					case TOKEN_SYMBOL_EOF:
 						context->state = STATE_EOF_SCOPE;
-						value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						// value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						value.rvalue = &de_rvalue;
 						fseek(file_env, -1, SEEK_CUR);
 					break;
 					case TOKEN_SYMBOL_NEWLINE:
 						context->state = STATE_NEWLINE_SCOPE;
-						value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						// value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						value.rvalue = &de_rvalue;
 						fseek(file_env, -1, SEEK_CUR);
 
 						// value_context->under_escape = false;
@@ -307,7 +310,8 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 					case TOKEN_SYMBOL_WHITESPACE:
 						context->prev_state = STATE_NON_QUOTE_VALUE_SCOPE;
 						context->state = STATE_COMMENT_SCOPE;	
-						value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						// value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						value.rvalue = &de_rvalue;
 					break;
 					case TOKEN_SYMBOL_SINGLE_QUOTE:
 						context->state = STATE_SINGLE_QUOTE_VALUE_SCOPE;
@@ -342,7 +346,8 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 						}
 
 						context->state = STATE_EOF_SCOPE;
-						value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						// value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						value.rvalue = &de_rvalue;
 						fseek(file_env, -1, SEEK_CUR);
 					break;
 					case TOKEN_SYMBOL_BACKSLASH:
@@ -359,7 +364,8 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 						}
 
 						context->state = STATE_NEWLINE_SCOPE;
-						value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						// value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						value.rvalue = &de_rvalue;
 						fseek(file_env, -1, SEEK_CUR);
 					break;
 					case TOKEN_SYMBOL_DOUBLE_QUOTE:
@@ -389,7 +395,8 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 						}
 
 						context->state = STATE_EOF_SCOPE;
-						value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						// value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						value.rvalue = &de_rvalue;
 						fseek(file_env, -1, SEEK_CUR);
 					break;
 					case TOKEN_SYMBOL_NEWLINE:
@@ -402,7 +409,8 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 						}
 
 						context->state = STATE_NEWLINE_SCOPE;
-						value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						// value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
+						value.rvalue = &de_rvalue;
 						fseek(file_env, -1, SEEK_CUR);
 					break;
 					case TOKEN_SYMBOL_SINGLE_QUOTE:
@@ -422,18 +430,16 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 			case STATE_NEWLINE_SCOPE:
 			case STATE_END_SCOPE:
 			case STATE_EOF_SCOPE:
-				if( value->lvalue && value->rvalue )
-				{
-
+				if( value.lvalue && value.rvalue ) {
 					// Fetch/parse key-value pair
 					#ifndef PHP_VERSION
-	                dotenv_printout("%ld - `%s` = `%s`\n", context->line, onec_string_get(value->lvalue), onec_string_get(value->rvalue));
+	                dotenv_printout("%ld - `%s` = `%s`\n", context->line, onec_string_getlc(value.lvalue), onec_string_get(value.rvalue));
 	                #else
 
 	                // Fetch for php here
 	                zval array_pack;
 	                array_init(&array_pack);
-	                
+
 	                zval line;
 	                ZVAL_LONG(&line, context->line);
 	                add_next_index_zval(&array_pack, &line);
@@ -441,16 +447,15 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 	                /* get rvalue */
 	                zval value_pair;
 
-
 	                if( type_cast )
 	                {
 		                switch( tcast_numeric_state )
 		                {
 			                case 0: // long
-		                		ZVAL_LONG(&value_pair, atoi(value->rvalue->val));
+		                		ZVAL_LONG(&value_pair, atoi(value.rvalue->val));
 			                break;
 				            case 1: // float
-				            	ZVAL_DOUBLE(&value_pair, strtod(value->rvalue->val, NULL));
+				            	ZVAL_DOUBLE(&value_pair, strtod(value.rvalue->val, NULL));
 				            break;
 					        default: // bool or string
 					        	if( tcast_bool_inc > -1 ) 
@@ -472,8 +477,10 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 						        }
 					        	
 					        	put_as_string: // string
-				                ZVAL_STRINGL(&value_pair, value->rvalue->val, value->rvalue->len);
-
+					        	{
+					        		zend_string* _value_pair = zend_string_init(value.rvalue->val, value.rvalue->len, 0);
+					        		ZVAL_STR(&value_pair, _value_pair);
+					        	}
 					        break;
 		                }
 
@@ -484,16 +491,18 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 		            }
 		            else
 		            {
-		                ZVAL_STRINGL(&value_pair, value->rvalue->val, value->rvalue->len);
+		                ZVAL_STRINGL(&value_pair, value.rvalue->val, value.rvalue->len);
 		            }
 
 	                add_next_index_zval(&array_pack, &value_pair);
 
-                	zval lexerial;
-                	ZVAL_STRINGL(&lexerial, value->rvalue->val, value->rvalue->len);
-	                add_next_index_zval(&array_pack, &lexerial);
+                	zval env_value;
+                	ZVAL_STRINGL(&env_value, value.rvalue->val, value.rvalue->len);
+	                add_next_index_zval(&array_pack, &env_value);
 
-					zend_hash_str_update((*target_key_value), value->lvalue->val, value->lvalue->len, &array_pack);
+	                // Store as [key] = value
+					zend_hash_str_update((*target_key_value),
+						value.lvalue->val, value.lvalue->len, &array_pack);
 	                #endif
 
 				    onec_string_resetlc(de_rvalue);
@@ -522,17 +531,16 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
 
 	end_parse:
 
-	free(value);
+	// free(value);
 	free(context);
 	free(value_context);
-
 	fclose(file_env);
 
     exit_parse:
 
     switch( error_no )
     {
-        case 0: dotenv_error(E_ERROR, NULL, "[dotenv] [0] failed to open file target: no such file or directory \"%s\"", filename_env); break;
+        case 0: dotenv_error(E_ERROR, NULL, "[dotenv] [0] failed to open file target: no such file or directory \"%s\"", source_path_src); break;
         case 1: dotenv_error(E_ERROR, NULL, "[dotenv] [1] uncaught_error: unexpected error while parsing"); break;
         case 2: dotenv_error(E_ERROR, NULL, "[dotenv] [2] syntax_error: identifier starts immediately after numeric literal at line %ld, column %ld", error_line, error_column); break;
         case 3 ... 5:
@@ -547,11 +555,13 @@ int dotenv_unsafe_parse( char* const filename_env, HashTable** target_key_value,
  	return 0;
 }
 
-int dotenv_safe_parse( char* const filename_env, HashTable** target_key_value, HashTable** target_comments, bool save_comment, bool type_cast )
+int dotenv_safe_parse( char* source_path_src, size_t source_path_len, HashTable** target_key_value, HashTable** target_comments, bool save_comment, bool type_cast )
 {
-	FILE*   file_env = fopen(filename_env, "r");
-	int		error_no = -1;
-	size_t 	error_line, error_column;
+	source_path_src[source_path_len] = '\0';
+
+	FILE* file_env = fopen(source_path_src, "r");
+	int error_no = -1;
+	size_t error_line, error_column;
 
 	// On fopen error call 
 	if( !file_env )
@@ -561,9 +571,8 @@ int dotenv_safe_parse( char* const filename_env, HashTable** target_key_value, H
 	}
 
 	// Type cast
-	int64_t      tcast_bool_inc		 = 0;
-	int          tcast_numeric_state = 0;
-
+	int64_t tcast_bool_inc = 0;
+	int tcast_numeric_state = 0;
 
 	onec_string* de_comment;
 	onec_string_init(de_comment);
@@ -573,32 +582,27 @@ int dotenv_safe_parse( char* const filename_env, HashTable** target_key_value, H
     onec_string_init(de_lvalue);
     onec_string_init(de_rvalue);
 
-	dotenv_context*
-		context 					= (dotenv_context*)malloc(sizeof(dotenv_context));
-		context->state    			= STATE_INIT_SCOPE;
-		context->under_comment      = false;
-		context->line 				= 1;
+	dotenv_context* context = (dotenv_context*)malloc(sizeof(dotenv_context));
+	context->state = STATE_INIT_SCOPE;
+	context->under_comment = false;
+	context->line = 1;
 
-	dotenv_value*
-		value               = (dotenv_value*)malloc(sizeof(dotenv_value));
-	dotenv_value_context*
-		value_context       = (dotenv_value_context*)malloc(sizeof(dotenv_value_context));
-
-	int increments			= 0;
-
+	dotenv_value* value = (dotenv_value*)malloc(sizeof(dotenv_value));
+	dotenv_value_context* value_context = (dotenv_value_context*)malloc(sizeof(dotenv_value_context));
+	int increments = 0;
 
 	while( (context->input = fgetc(file_env)) )
 	{
 		if( context->state == STATE_INIT_SCOPE )
 		{
 			context->prev_state	= STATE_BEGIN_INDENTIFIER_SCOPE;
-			context->state		= STATE_COMMENT_SCOPE;
+			context->state = STATE_COMMENT_SCOPE;
 
-			context->column			= 0;
-			context->under_comment	= false;
+			context->column = 0;
+			context->under_comment = false;
 
-            value->rvalue           = NULL;
-            value->lvalue           = NULL;
+            value->rvalue = NULL;
+            value->lvalue = NULL;
 
 			value_context->under_single_quote = false;
 			value_context->under_double_quote = false;
@@ -622,8 +626,10 @@ int dotenv_safe_parse( char* const filename_env, HashTable** target_key_value, H
 							dotenv_printout("# [%ld] `%s`\n", context->line, onec_string_get(de_comment));
 							#else
 							// Fetch over here for php
-							zval comment;
-							ZVAL_STRINGL(&comment, de_comment->val, de_comment->len);
+							zend_string* _comment = zend_string_init(de_comment->val, de_comment->len, 0);
+							zval comment; ZVAL_STR(&comment, _comment);
+							// zval comment;
+							// ZVAL_STRINGL(&comment, de_comment->val, de_comment->len);
 							zend_hash_index_update((*target_comments), context->line, &comment);
 							#endif
 							onec_string_reset(de_comment);	
@@ -634,13 +640,11 @@ int dotenv_safe_parse( char* const filename_env, HashTable** target_key_value, H
 					break;
 					case TOKEN_SYMBOL_TABSPACE:
 					case TOKEN_SYMBOL_WHITESPACE:
-						if(! context->under_comment )
-						{
+						if(! context->under_comment ) {
 							break;
 						}
 					default:
-						if( context->under_comment )
-						{
+						if( context->under_comment ) {
 							onec_string_put(de_comment, context->input);
 							break;
 						}
@@ -924,9 +928,7 @@ int dotenv_safe_parse( char* const filename_env, HashTable** target_key_value, H
 			case STATE_NEWLINE_SCOPE:
 			case STATE_END_SCOPE:
 			case STATE_EOF_SCOPE:
-				if( value->lvalue && value->rvalue )
-				{
-
+				if( value->lvalue && value->rvalue ) {
 					// Fetch/parse key-value pair
 					#ifndef PHP_VERSION
 	                dotenv_printout("%ld - `%s` = `%s`\n", context->line, onec_string_get(value->lvalue), onec_string_get(value->rvalue));
@@ -935,14 +937,13 @@ int dotenv_safe_parse( char* const filename_env, HashTable** target_key_value, H
 	                // Fetch for php here
 	                zval array_pack;
 	                array_init(&array_pack);
-	                
+
 	                zval line;
 	                ZVAL_LONG(&line, context->line);
 	                add_next_index_zval(&array_pack, &line);
 
 	                /* get rvalue */
 	                zval value_pair;
-
 
 	                if( type_cast )
 	                {
@@ -974,8 +975,10 @@ int dotenv_safe_parse( char* const filename_env, HashTable** target_key_value, H
 						        }
 					        	
 					        	put_as_string: // string
-				                ZVAL_STRINGL(&value_pair, value->rvalue->val, value->rvalue->len);
-
+					        	{
+					        		zend_string* _value_pair = zend_string_init(value->rvalue->val, value->rvalue->len, 0);
+					        		ZVAL_STR(&value_pair, _value_pair);
+					        	}
 					        break;
 		                }
 
@@ -991,11 +994,13 @@ int dotenv_safe_parse( char* const filename_env, HashTable** target_key_value, H
 
 	                add_next_index_zval(&array_pack, &value_pair);
 
-                	zval lexerial;
-                	ZVAL_STRINGL(&lexerial, value->rvalue->val, value->rvalue->len);
-	                add_next_index_zval(&array_pack, &lexerial);
+                	zval env_value;
+                	ZVAL_STRINGL(&env_value, value->rvalue->val, value->rvalue->len);
+	                add_next_index_zval(&array_pack, &env_value);
 
-					zend_hash_str_update((*target_key_value), value->lvalue->val, value->lvalue->len, &array_pack);
+	                // Store as [key] = value
+					zend_hash_str_update((*target_key_value),
+						value->lvalue->val, value->lvalue->len, &array_pack);
 	                #endif
 
 				    onec_string_reset(de_rvalue);
@@ -1038,7 +1043,7 @@ int dotenv_safe_parse( char* const filename_env, HashTable** target_key_value, H
 
     switch( error_no )
     {
-        case 0: dotenv_error(E_ERROR, NULL, "[dotenv] [0] failed to open file target: no such file or directory \"%s\"", filename_env); break;
+        case 0: dotenv_error(E_ERROR, NULL, "[dotenv] [0] failed to open file target: no such file or directory \"%s\"", source_path_src); break;
         case 1: dotenv_error(E_ERROR, NULL, "[dotenv] [1] uncaught_error: unexpected error while parsing"); break;
         case 2: dotenv_error(E_ERROR, NULL, "[dotenv] [2] syntax_error: identifier starts immediately after numeric literal at line %ld, column %ld", error_line, error_column); break;
         case 3 ... 5:
