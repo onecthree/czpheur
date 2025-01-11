@@ -58,6 +58,9 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Response_getHeaders_arginfo, 0, 0, IS_ARRAY, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Response___service_arginfo, 0, 0, IS_OBJECT, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Response___toString_arginfo, 0, 0, IS_STRING, 0)
 ZEND_END_ARG_INFO()
 
@@ -68,6 +71,7 @@ PHP_METHOD(Response, statusCode);
 PHP_METHOD(Response, redirect);
 PHP_METHOD(Response, set);
 PHP_METHOD(Response, getHeaders);
+PHP_METHOD(Response, __service);
 PHP_METHOD(Response, __toString);
 
 
@@ -78,6 +82,7 @@ static const zend_function_entry zpheur_schemes_http_message_response_class_meth
     PHP_ME(Response, redirect, Response_redirect_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Response, set, Response_set_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Response, getHeaders, Response_getHeaders_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Response, __service, Response___service_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Response, __toString, Response___toString_arginfo, ZEND_ACC_PUBLIC)
 	ZEND_FE_END
 };

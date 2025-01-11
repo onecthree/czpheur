@@ -237,7 +237,7 @@ container_scalar_find( container_t* container, zend_string* name )
 }
 
 void __attribute__ ((noinline))
-container_class_add_service( container_t* container, char* name_src, size_t name_len, zval* service )
+container_class_add_service( container_t* container, char* name_src, size_t name_len, zval* service, bool derived_parent_class )
 {
     zend_string* name = zend_string_init(name_src, name_len, 0);
     for( int i = 0; i < container->classes_len; i++ )
@@ -253,18 +253,37 @@ container_class_add_service( container_t* container, char* name_src, size_t name
     }
 
     zval object; ZVAL_COPY(&object, service);
-    onec_string* class_name = 
-        onec_string_initd(name_src, name_len);
 
-    container->classes_src[container->classes_len] = (container_class_pack)
-    {
-        .class_name = class_name,
-        .object = Z_OBJ(object),
-    };
-    container->classes_len++;
+    if( derived_parent_class ) {
+        zend_class_entry* current = Z_OBJ(object)->ce;
+        while( true ) {
+            onec_string* class_name = 
+                onec_string_initd(current->name->val, current->name->len);
+
+            container->classes_src[container->classes_len] = (container_class_pack)
+            {
+                .class_name = class_name,
+                .object = Z_OBJ(object),
+            };
+            container->classes_len++;
+            
+            if(! (current = current->parent) ) {
+                break;
+            }
+        }
+    } else {
+        onec_string* class_name = 
+            onec_string_initd(name_src, name_len);
+
+        container->classes_src[container->classes_len] = (container_class_pack)
+        {
+            .class_name = class_name,
+            .object = Z_OBJ(object),
+        };
+        container->classes_len++;
+    }
 
     no_add:
-
     zend_string_release(name);
     return;
 }
@@ -417,10 +436,9 @@ PHP_METHOD(Container, getService)
         efree(params_of_resolve);
 
         zval* return_self =
-            php_class_call_method(target_class, "servicePin", sizeof("servicePin") - 1, 0, NULL, 0);
+            php_class_call_method(target_class, "__service", sizeof("__service") - 1, 0, NULL, 0);
 
-        container_class_add_service(instance->container, service_name->val, service_name->len, return_self);
-        // ZVAL_COPY(&service, return_self);
+        container_class_add_service(instance->container, service_name->val, service_name->len, return_self, false);
         service = *return_self;
 
         efree(return_self);
@@ -533,9 +551,9 @@ PHP_METHOD(Container, getServiceFromArray)
             efree(params_of_resolve);
 
             zval* return_self =
-                php_class_call_method(target_class, "servicePin", sizeof("servicePin") - 1, 0, NULL, 0);
+                php_class_call_method(target_class, "__service", sizeof("__service") - 1, 0, NULL, 0);
 
-            container_class_add_service(instance->container, service_name->val, service_name->len, return_self);
+            container_class_add_service(instance->container, service_name->val, service_name->len, return_self, false);
             zend_hash_next_index_insert(arguments, return_self);
 
             efree(return_self);
@@ -565,8 +583,12 @@ PHP_METHOD(Container, listAllServices)
     char* from_service_src = NULL;
     size_t from_service_len = 0;
 
-    ZEND_PARSE_PARAMETERS_START(1, 1)
+    bool only_key_name = false;
+
+    ZEND_PARSE_PARAMETERS_START(1, 2)
         Z_PARAM_STRING(from_service_src, from_service_len)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_BOOL(only_key_name)
     ZEND_PARSE_PARAMETERS_END();
 
     container_object* instance = ZPHEUR_ZVAL_GET_OBJECT(container_object, getThis());
@@ -577,11 +599,21 @@ PHP_METHOD(Container, listAllServices)
 
     if( strncmp("classes", from_service_src, sizeof("classes")-1) == 0 )
     {
-        for( int i = 0; i < instance->container->classes_len; i++ )
-        {
-            container_class_pack pack = instance->container->classes_src[i];
-            zval object; ZVAL_OBJ_COPY(&object, pack.object);
-            zend_hash_str_update(services, pack.class_name->val, pack.class_name->len, &object);
+        if( only_key_name ) {
+            for( int i = 0; i < instance->container->classes_len; i++ )
+            {
+                container_class_pack pack = instance->container->classes_src[i];
+                zend_string* pack_name = zend_string_init(pack.class_name->val, pack.class_name->len, 0);
+                zval _pack_name; ZVAL_STR(&_pack_name, pack_name);
+                zend_hash_next_index_insert(services, &_pack_name);
+            }
+        } else {
+            for( int i = 0; i < instance->container->classes_len; i++ )
+            {
+                container_class_pack pack = instance->container->classes_src[i];
+                zval object; ZVAL_OBJ_COPY(&object, pack.object);
+                zend_hash_str_update(services, pack.class_name->val, pack.class_name->len, &object);
+            } 
         }
 
         goto skip_error;
@@ -589,11 +621,21 @@ PHP_METHOD(Container, listAllServices)
 
     if( strncmp("scalars", from_service_src, sizeof("scalars")-1) == 0 )
     {
-        for( int i = 0; i < instance->container->scalars_len; i++ )
-        {
-            container_scalar_pack pack = instance->container->scalars_src[i];
-            zval copy; ZVAL_COPY(&copy, pack.value);
-            zend_hash_str_update(services, pack.scalar_name->val, pack.scalar_name->len, &copy);
+        if( only_key_name ) {
+            for( int i = 0; i < instance->container->classes_len; i++ )
+            {
+                container_scalar_pack pack = instance->container->scalars_src[i];
+                zend_string* pack_name = zend_string_init(pack.scalar_name->val, pack.scalar_name->len, 0);
+                zval _pack_name; ZVAL_STR(&_pack_name, pack_name);
+                zend_hash_next_index_insert(services, &_pack_name);
+            }
+        } else {
+            for( int i = 0; i < instance->container->scalars_len; i++ )
+            {
+                container_scalar_pack pack = instance->container->scalars_src[i];
+                zval copy; ZVAL_COPY(&copy, pack.value);
+                zend_hash_str_update(services, pack.scalar_name->val, pack.scalar_name->len, &copy);
+            }
         }
 
         goto skip_error;
@@ -609,9 +651,12 @@ PHP_METHOD(Container, listAllServices)
 PHP_METHOD(Container, setClass)
 {
     zval* service = NULL;
+    bool derived_parent_class = false;
 
-    ZEND_PARSE_PARAMETERS_START(1, 1);
+    ZEND_PARSE_PARAMETERS_START(1, 2);
         Z_PARAM_OBJECT(service)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_BOOL(derived_parent_class)
     ZEND_PARSE_PARAMETERS_END();
 
     container_object* instance =
@@ -621,7 +666,7 @@ PHP_METHOD(Container, setClass)
     zend_string* class_name = object->ce->name;
 
     container_class_add_service(instance->container,
-        class_name->val, class_name->len, service);
+        class_name->val, class_name->len, service, derived_parent_class);
 }
 
 PHP_METHOD(Container, setScalar)
@@ -726,7 +771,7 @@ PHP_METHOD(Container, setClassFromArray)
         zend_string* class_name = object->ce->name;
 
         container_class_add_service(instance->container,
-            class_name->val, class_name->len, service);
+            class_name->val, class_name->len, service, false);
     }
     ZEND_HASH_FOREACH_END();
 }

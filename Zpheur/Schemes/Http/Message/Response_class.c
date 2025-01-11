@@ -306,6 +306,13 @@ PHP_METHOD(Response, getHeaders)
     RETURN_ARR(headers);
 }
 
+PHP_METHOD(Response, __service)
+{
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    RETURN_ZVAL(getThis(), 1, 0);
+}
+
 PHP_METHOD(Response, __toString)
 {
     ZEND_PARSE_PARAMETERS_NONE();

@@ -31,8 +31,9 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Container_getServiceFromArray_arginfo, 1
     ZEND_ARG_TYPE_INFO(0, serviceName, IS_ARRAY, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Container_setClass_arginfo, 0, 1, IS_VOID, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Container_setClass_arginfo, 0, 2, IS_VOID, 0)
     ZEND_ARG_TYPE_INFO(0, class, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, derived_parent_class, _IS_BOOL, 0)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Container_setScalar_arginfo, 0, 2, IS_VOID, 0)
@@ -52,8 +53,9 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Container_hasService_arginfo, 0, 1, _IS_
     ZEND_ARG_TYPE_INFO(0, name, IS_STRING, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Container_listAllServices_arginfo, 0, 1, IS_VOID, 0)
-    ZEND_ARG_TYPE_INFO(0, fromService, IS_TRUE, 0)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Container_listAllServices_arginfo, 0, 2, IS_ARRAY, 0)
+    ZEND_ARG_TYPE_INFO(0, service, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, only_key_name, _IS_BOOL, 0)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Container_clean_arginfo, 0, 0, IS_VOID, 0)

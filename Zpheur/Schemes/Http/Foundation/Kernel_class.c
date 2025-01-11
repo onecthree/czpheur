@@ -648,7 +648,6 @@ PHP_METHOD(HttpKernel, handle)
 	}
 	else
 	{
-		// zend_object_release(class_action);
 		RETURN_STRINGL("", 0);
 	}
 } // End handle
