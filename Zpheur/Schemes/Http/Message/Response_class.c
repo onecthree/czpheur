@@ -320,11 +320,13 @@ PHP_METHOD(Response, __toString)
     response_object* instance = 
         ZPHEUR_ZVAL_GET_OBJECT(response_object, getThis());
 
-    zval asd; ZVAL_STRINGL(&asd, instance->common->output_buffer->val, instance->common->output_buffer->len);
-    RETURN_ZVAL(&asd, 1, 0);
-    // RETURN_STR(zend_string_init(
-    //     instance->common->output_buffer->val, instance->common->output_buffer->len, 0
-    // ));
+    zend_string* output_buffer = zend_string_init(
+        instance->common->output_buffer->val, instance->common->output_buffer->len, 0
+    );
+
+    // zval asd; ZVAL_STRINGL(&asd, instance->common->output_buffer->val, instance->common->output_buffer->len);
+    // RETURN_ZVAL(&asd, 1, 0);
+    RETURN_STR(output_buffer);
 }
 
 ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Message_Response)

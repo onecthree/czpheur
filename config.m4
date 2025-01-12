@@ -91,12 +91,12 @@ if test "$PHP_ZPHEUR" != "no"; then
       Zpheur/Schemes/Http/Foundation/HeaderBag_class.c                  \
       Zpheur/Schemes/Http/Foundation/InputBag_class.c                   \
       Zpheur/Schemes/Http/Foundation/Kernel_class.c                     \
-      Zpheur/Schemes/Http/Foundation/Request_class.c                    \
       Zpheur/Schemes/Http/Foundation/ServerBag_class.c                  \
-      Zpheur/Schemes/Http/Message/HeaderInterface_class.c               \
+      Zpheur/Schemes/Http/Message/RequestInterface_class.c              \
+      Zpheur/Schemes/Http/Message/ResponseInterface_class.c             \
       Zpheur/Schemes/Http/Message/HeaderTrait_class.c                   \
+      Zpheur/Schemes/Http/Message/Request_class.c                       \
       Zpheur/Schemes/Http/Message/Response_class.c                      \
-      Zpheur/Schemes/Http/Responder/ErrorRequest_class.c                \
       Zpheur/Schemes/Http/Routing/Dispatcher/DispatchItem_class.c       \
       Zpheur/Schemes/Http/Routing/Dispatcher_class.c                    \
       Zpheur/Schemes/Http/Routing/Route_class.c                         \
