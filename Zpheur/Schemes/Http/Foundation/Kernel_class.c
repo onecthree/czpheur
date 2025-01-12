@@ -27,15 +27,15 @@
 #include <include/runtime.h>
 #include <Zpheur/Schemes/Http/Message/Response_arginfo.h>
 #include <Zpheur/Actions/Reflection/ArgumentResolver_arginfo.h>
-#include <Zpheur/Schemes/Http/Message/HeaderInterface_arginfo.h>
+#include <Zpheur/Schemes/Http/Message/ResponseInterface_arginfo.h>
 #include "ParameterBag_arginfo.h"
 #include "Kernel_arginfo.h"
 
 
 #define L_HTTP_RESPONSE_SRC "Zpheur\\Schemes\\Http\\Message\\Response"
 #define L_HTTP_RESPONSE_LEN sizeof("Zpheur\\Schemes\\Http\\Message\\Response") - 1
-#define L_HTTP_HEADERINTERFACE_SRC "Zpheur\\Schemes\\Http\\Message\\HeaderInterface"
-#define L_HTTP_HEADERINTERFACE_LEN sizeof("Zpheur\\Schemes\\Http\\Message\\HeaderInterface") - 1
+#define L_HTTP_HEADERINTERFACE_SRC "Zpheur\\Schemes\\Http\\Message\\ResponseInterface"
+#define L_HTTP_HEADERINTERFACE_LEN sizeof("Zpheur\\Schemes\\Http\\Message\\ResponseInterface") - 1
 
 zend_object_handlers kernel_object_handlers;
 

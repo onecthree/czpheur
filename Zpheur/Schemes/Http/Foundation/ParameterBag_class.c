@@ -13,10 +13,8 @@ void free_parameter_bag_object(zend_object* object)
     parameter_bag_object* instance = ZPHEUR_GET_OBJECT(parameter_bag_object, object);
 
     zend_object_std_dtor(&instance->std);
-    if( instance->common )
-    {
-    	if( instance->common->parameters != NULL )
-    	{
+    if( instance->common ) {
+    	if( instance->common->parameters != NULL ) {
     		zend_hash_destroy(instance->common->parameters);
     		FREE_HASHTABLE(instance->common->parameters);
     	}
