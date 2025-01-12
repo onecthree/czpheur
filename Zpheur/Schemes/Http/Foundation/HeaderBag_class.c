@@ -55,28 +55,34 @@ zend_object* create_header_bag_object( zend_class_entry* ce )
 
 PHP_METHOD(HeaderBag, __construct)
 {
-	zval* headers;
+	HashTable* headers = NULL;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
-		Z_PARAM_ZVAL(headers);
+		Z_PARAM_ARRAY_HT(headers);
 	ZEND_PARSE_PARAMETERS_END();
 
-	zend_this_update_property("headers", headers);
+    header_bag_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(header_bag_object, getThis());
+
+    ALLOC_HASHTABLE(instance->common->headers);
+    zend_hash_init(instance->common->headers, 0, NULL, ZVAL_PTR_DTOR, 0);
+    zend_hash_copy(instance->common->headers, headers, zval_add_ref);
 }
 
 PHP_METHOD(HeaderBag, get)
 {
-	char*   field_src;
-	size_t  field_len;
+	char*   field_src = NULL;
+	size_t  field_len = 0;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
 		Z_PARAM_STRING(field_src, field_len)
 	ZEND_PARSE_PARAMETERS_END();
 
 	zval* value;
-	zval* headers = zend_this_read_property("headers");
+    header_bag_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(header_bag_object, getThis());
 
-	if( (value = zend_hash_str_find(Z_ARR_P(headers), field_src, field_len)) )
+	if( (value = zend_hash_str_find(instance->common->headers, field_src, field_len)) )
 		RETURN_ZVAL(value, 1, 0);
 
 	RETURN_NULL();
@@ -91,21 +97,36 @@ PHP_METHOD(HeaderBag, has)
 		Z_PARAM_STRING(field_src, field_len)
 	ZEND_PARSE_PARAMETERS_END();
 
-	zval* headers = zend_this_read_property("headers");
+    header_bag_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(header_bag_object, getThis());
 
-	if( zend_hash_str_find(Z_ARR_P(headers), field_src, field_len) )
+	if( zend_hash_str_find(instance->common->headers, field_src, field_len) )
 		RETURN_TRUE;
 
 	RETURN_FALSE;
+}
+
+PHP_METHOD(HeaderBag, count)
+{
+	ZEND_PARSE_PARAMETERS_NONE();
+
+    header_bag_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(header_bag_object, getThis());
+
+	RETURN_LONG(zend_hash_num_elements(
+		instance->common->headers
+	));
 }
 
 PHP_METHOD(HeaderBag, all)
 {
 	ZEND_PARSE_PARAMETERS_NONE();
 
-	zval* headers = zend_this_read_property("headers");
+    header_bag_object* instance = 
+        ZPHEUR_ZVAL_GET_OBJECT(header_bag_object, getThis());
 
-	RETURN_ZVAL(headers, 1, 0);
+    instance->common->headers->gc.refcount++;
+	RETURN_ARR(instance->common->headers);
 }
 
 ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Foundation_HeaderBag)
