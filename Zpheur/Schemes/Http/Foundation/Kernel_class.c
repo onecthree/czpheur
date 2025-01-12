@@ -26,8 +26,16 @@
 #include <zpheur.h>
 #include <include/runtime.h>
 #include <Zpheur/Schemes/Http/Message/Response_arginfo.h>
+#include <Zpheur/Actions/Reflection/ArgumentResolver_arginfo.h>
+#include <Zpheur/Schemes/Http/Message/HeaderInterface_arginfo.h>
 #include "ParameterBag_arginfo.h"
 #include "Kernel_arginfo.h"
+
+
+#define L_HTTP_RESPONSE_SRC "Zpheur\\Schemes\\Http\\Message\\Response"
+#define L_HTTP_RESPONSE_LEN sizeof("Zpheur\\Schemes\\Http\\Message\\Response") - 1
+#define L_HTTP_HEADERINTERFACE_SRC "Zpheur\\Schemes\\Http\\Message\\HeaderInterface"
+#define L_HTTP_HEADERINTERFACE_LEN sizeof("Zpheur\\Schemes\\Http\\Message\\HeaderInterface") - 1
 
 zend_object_handlers kernel_object_handlers;
 
@@ -96,6 +104,14 @@ PHP_METHOD(HttpKernel, __construct)
     instance->common->argument_resolver = Z_OBJ_P(argument_resolver);
 }
 
+/**
+ * While return a stringable buffer from latest action,
+ * it keep to always free'd copied \App\Service\Http\Message\Response.
+ * In another case it is actually can return the copied itself
+ * as object, but remain a memory leak.
+ * TODO need alternativly to return object as memory safe
+ */
+/* {{{ handle */
 PHP_METHOD(HttpKernel, handle)
 {
 	zval*   request_method;
@@ -243,17 +259,17 @@ PHP_METHOD(HttpKernel, handle)
 
 			zval _middleware_class_name; ZVAL_STR(&_middleware_class_name, middleware_class_name);
 			params_resolve[0] = _middleware_class_name;
-			zend_string* _zs_invoke = zend_string_init("__invoke", sizeof("__invoke") - 1, 0);
-			zval _invoke; ZVAL_STR(&_invoke, _zs_invoke);
-			params_resolve[1] = _invoke;
+			zend_string* process_str = zend_string_init("process", sizeof("process") - 1, 0);
+			zval process_param; ZVAL_STR(&process_param, process_str);
+			params_resolve[1] = process_param;
 
 			zval* middleware_params_src =
 				php_class_call_method(argument_resolver, "resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
 
 			if( Z_TYPE_P(middleware_params_src) != IS_NULL )
 			{
-				zend_ulong 	middleware_params_len = zend_hash_num_elements(Z_ARR_P(middleware_params_src));
-				zval* 		middleware_params_resolve = (zval*)safe_emalloc(middleware_params_len, sizeof(zval), 0);
+				zend_ulong middleware_params_len = zend_hash_num_elements(Z_ARR_P(middleware_params_src));
+				zval* middleware_params_resolve = (zval*)safe_emalloc(middleware_params_len, sizeof(zval), 0);
 
 				for( int i = 0; i < middleware_params_len; i += 1)
 				{
@@ -262,7 +278,7 @@ PHP_METHOD(HttpKernel, handle)
 
 				// It should return zval ptr
 				local_return_action =
-				php_class_call_method(middleware_class, "__invoke", sizeof("__invoke") - 1, middleware_params_len, middleware_params_resolve, 0);
+				php_class_call_method(middleware_class, "process", sizeof("process") - 1, middleware_params_len, middleware_params_resolve, 0);
 				zend_hash_graceful_reverse_destroy(Z_ARR_P(middleware_params_src));
 				FREE_HASHTABLE(Z_ARR_P(middleware_params_src));
 				efree(middleware_params_resolve);
@@ -270,17 +286,14 @@ PHP_METHOD(HttpKernel, handle)
 			else
 			{
 				php_error_docref(NULL,
-	        		E_CORE_ERROR, "Call to undefined method %s::__invoke()",
+	        		E_CORE_ERROR, "Call to undefined method %s::process()",
 	        		middleware_class_name->val);
 			}
 
 			efree(middleware_params_src);
-			zend_string_release(_zs_invoke);
+			zend_string_release(process_str);
 			efree(params_resolve);
 		} while(0);
-
-		#define ZHTTP_RESPONSE "Zpheur\\Schemes\\Http\\Message\\Response"
-		#define ZHTTP_RESPONSE_LEN sizeof("Zpheur\\Schemes\\Http\\Message\\Response") - 1
 
 		switch( (1 << Z_TYPE_P(local_return_action)) )
 		{
@@ -288,9 +301,9 @@ PHP_METHOD(HttpKernel, handle)
 			case BITW_IS_OBJECT:
 			{
 				zend_object* object = Z_OBJ_P(local_return_action);
-				if( zend_string_equals_cstr(object->ce->name, ZHTTP_RESPONSE, ZHTTP_RESPONSE_LEN) ||
+				if( zend_string_equals_cstr(object->ce->name, L_HTTP_RESPONSE_SRC, L_HTTP_RESPONSE_LEN) ||
 					( object->ce->parent && zend_string_equals_cstr(object->ce->parent->name,
-						ZHTTP_RESPONSE, ZHTTP_RESPONSE_LEN) ) 
+						L_HTTP_RESPONSE_SRC, L_HTTP_RESPONSE_LEN) ) 
 				)
 				{
 					zend_object_release(middleware_class);
@@ -307,8 +320,8 @@ PHP_METHOD(HttpKernel, handle)
 			}
 			default:
 				php_error_docref(NULL, E_ERROR,
-					"%s::__invoke() return type must be instance of %s or void",
-					middleware_class_name->val, ZHTTP_RESPONSE
+					"%s::process() return type must be instance of %s or void",
+					middleware_class_name->val, L_HTTP_RESPONSE_SRC
 				);	
 			break;
 		}
@@ -430,9 +443,19 @@ PHP_METHOD(HttpKernel, handle)
 			case BITW_IS_OBJECT:
 			{
 				zend_object* object = Z_OBJ_P(local_return_action);
-				if( zend_string_equals_cstr(object->ce->name, ZHTTP_RESPONSE, ZHTTP_RESPONSE_LEN) ||
+
+				if(! zend_class_implements_interface(object->ce, 
+					zpheur_schemes_http_message_headerinterface_class_entry) ) {
+
+					php_error_docref(NULL, E_ERROR,
+						"%s must implement the interface " L_HTTP_HEADERINTERFACE_SRC,
+						object->ce->name->val
+					);
+				}
+
+				if( zend_string_equals_cstr(object->ce->name, L_HTTP_RESPONSE_SRC, L_HTTP_RESPONSE_LEN) ||
 					( object->ce->parent && zend_string_equals_cstr(object->ce->parent->name,
-						ZHTTP_RESPONSE, ZHTTP_RESPONSE_LEN) ) 
+						L_HTTP_RESPONSE_SRC, L_HTTP_RESPONSE_LEN) ) 
 				)
 				{
 					return_action = local_return_action;
@@ -448,10 +471,10 @@ PHP_METHOD(HttpKernel, handle)
 					return_action = NULL;
 					zend_object_release(class_action);
 					goto early_disturb;
-				}
+				} 
 				php_error_docref(NULL, E_ERROR,
 					"%s::%s() return type must be instance of %s",
-					Z_STR_P(action_class)->val, Z_STR_P(action_method)->val, ZHTTP_RESPONSE
+					Z_STR_P(action_class)->val, Z_STR_P(action_method)->val, L_HTTP_RESPONSE_SRC
 				);	
 			break;
 		}
@@ -573,9 +596,9 @@ PHP_METHOD(HttpKernel, handle)
 
 				zval _middleware_class_name; ZVAL_STR(&_middleware_class_name, middleware_class_name);
 				params_resolve[0] = _middleware_class_name;
-				zend_string* _zs_invoke = zend_string_init("__invoke", sizeof("__invoke") - 1, 0);
-				zval _invoke; ZVAL_STR(&_invoke, _zs_invoke);
-				params_resolve[1] = _invoke;
+				zend_string* process_str = zend_string_init("process", sizeof("process") - 1, 0);
+				zval process_param; ZVAL_STR(&process_param, process_str);
+				params_resolve[1] = process_param;
 
 				zval* middleware_params_src =
 					php_class_call_method(argument_resolver, "resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
@@ -593,7 +616,7 @@ PHP_METHOD(HttpKernel, handle)
 
 					// It should return zval ptr
 					local_return_action =
-						php_class_call_method(middleware_class, "__invoke", sizeof("__invoke") - 1, middleware_params_len, middleware_params_resolve, 0);
+						php_class_call_method(middleware_class, "process", sizeof("process") - 1, middleware_params_len, middleware_params_resolve, 0);
 					zend_hash_destroy(Z_ARR_P(middleware_params_src));
 					FREE_HASHTABLE(Z_ARR_P(middleware_params_src));
 					efree(middleware_params_resolve);
@@ -601,12 +624,12 @@ PHP_METHOD(HttpKernel, handle)
 				else
 				{
 					php_error_docref(NULL,
-	            		E_CORE_ERROR, "Call to undefined method %s::__invoke()",
+	            		E_CORE_ERROR, "Call to undefined method %s::process()",
 	            		middleware_class_name->val);
 				}
 
 				efree(middleware_params_src);
-				zend_string_release(_zs_invoke);
+				zend_string_release(process_str);
 			} while(0);
 
 			zend_object_release(middleware_class);
@@ -615,7 +638,7 @@ PHP_METHOD(HttpKernel, handle)
 			if(! ((1 << Z_TYPE_P(local_return_action)) & BITW_IS_NULL) )
 			{
 				php_error_docref(NULL,
-	        		E_ERROR, "%s::__invoke() expects a non return value (void), %s returned",
+	        		E_ERROR, "%s::process() expects a non return value (void), %s returned",
 	        		middleware_class_name->val, ZTYPE_TO_STR(Z_TYPE_P(local_return_action)));
 			}
 
@@ -629,29 +652,31 @@ PHP_METHOD(HttpKernel, handle)
 	}
 
 	early_disturb:
-
 	zend_hash_destroy(Z_ARR_P(dispatched_bind));
 	FREE_HASHTABLE(Z_ARR_P(dispatched_bind));
 	efree(dispatched_bind);
 	zend_hash_destroy(Z_ARR_P(dispatched));
 	FREE_HASHTABLE(Z_ARR_P(dispatched));
 	efree(dispatched);
+
+	char* buffer_ret_src = "";
+	size_t buffer_ret_len = 0;
 	
-	if( return_action != NULL )
-	{	
+	if( return_action ) {	
 	    response_object* response = 
 	        ZPHEUR_ZVAL_GET_OBJECT(response_object, return_action);
 
 		zend_object_release(Z_OBJ_P(return_action));
 		efree(return_action);
-		RETURN_STRINGL(response->common->output_buffer->val, response->common->output_buffer->len);
-	}
-	else
-	{
-		RETURN_STRINGL("", 0);
-	}
-} // End handle
 
+		buffer_ret_src = response->common->output_buffer->val;
+		buffer_ret_len = response->common->output_buffer->len;
+	}
+
+	RETURN_STRINGL(buffer_ret_src, buffer_ret_len);
+} /* _handle }}} */
+
+/* {{{ terminate */
 PHP_METHOD(HttpKernel, terminate)
 {
 	char* class_src = NULL;
@@ -763,9 +788,19 @@ PHP_METHOD(HttpKernel, terminate)
 			case BITW_IS_OBJECT:
 			{
 				zend_object* object = Z_OBJ_P(return_action);
-				if( zend_string_equals_cstr(object->ce->name, ZHTTP_RESPONSE, ZHTTP_RESPONSE_LEN) ||
+
+				if(! zend_class_implements_interface(object->ce, 
+					zpheur_schemes_http_message_headerinterface_class_entry) ) {
+
+					php_error_docref(NULL, E_ERROR,
+						"%s must implement the interface " L_HTTP_HEADERINTERFACE_SRC,
+						object->ce->name->val
+					);
+				}
+				
+				if( zend_string_equals_cstr(object->ce->name, L_HTTP_RESPONSE_SRC, L_HTTP_RESPONSE_LEN) ||
 					( object->ce->parent && zend_string_equals_cstr(object->ce->parent->name,
-						ZHTTP_RESPONSE, ZHTTP_RESPONSE_LEN) ) 
+						L_HTTP_RESPONSE_SRC, L_HTTP_RESPONSE_LEN) ) 
 				)
 				{
 					break;
@@ -774,7 +809,7 @@ PHP_METHOD(HttpKernel, terminate)
 			default:
 				php_error_docref(NULL, E_ERROR,
 					"%s::%s() return type must be instance of %s",
-					class_src, method_src, ZHTTP_RESPONSE
+					class_src, method_src, L_HTTP_RESPONSE_SRC
 				);	
 			break;
 		}
@@ -897,9 +932,9 @@ PHP_METHOD(HttpKernel, terminate)
 
 			zval _middleware_class_name; ZVAL_STR(&_middleware_class_name, middleware_class_name);
 			params_resolve[0] = _middleware_class_name;
-			zend_string* _zs_invoke = zend_string_init("__invoke", sizeof("__invoke") - 1, 0);
-			zval _invoke; ZVAL_STR(&_invoke, _zs_invoke);
-			params_resolve[1] = _invoke;
+			zend_string* process_str = zend_string_init("process", sizeof("process") - 1, 0);
+			zval process_param; ZVAL_STR(&process_param, process_str);
+			params_resolve[1] = process_param;
 
 			zval* middleware_params_src =
 				php_class_call_method(argument_resolver, "resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
@@ -917,7 +952,7 @@ PHP_METHOD(HttpKernel, terminate)
 
 				// It should return zval ptr
 				local_return_action =
-					php_class_call_method(middleware_class, "__invoke", sizeof("__invoke") - 1, middleware_params_len, middleware_params_resolve, 0);
+					php_class_call_method(middleware_class, "process", sizeof("process") - 1, middleware_params_len, middleware_params_resolve, 0);
 				zend_hash_destroy(Z_ARR_P(middleware_params_src));
 				FREE_HASHTABLE(Z_ARR_P(middleware_params_src));
 				efree(middleware_params_resolve);
@@ -925,12 +960,12 @@ PHP_METHOD(HttpKernel, terminate)
 			else
 			{
 				php_error_docref(NULL,
-            		E_CORE_ERROR, "Call to undefined method %s::__invoke()",
+            		E_CORE_ERROR, "Call to undefined method %s::process()",
             		middleware_class_name->val);
 			}
 
 			efree(middleware_params_src);
-			zend_string_release(_zs_invoke);
+			zend_string_release(process_str);
 		} while(0); // Call action method (middleware)
 
 		if( EG(exception) )
@@ -942,7 +977,7 @@ PHP_METHOD(HttpKernel, terminate)
 		if(! ((1 << Z_TYPE_P(local_return_action)) & BITW_IS_NULL) )
 		{
 			php_error_docref(NULL,
-        		E_ERROR, "%s::__invoke() expects a non return value (void), %s returned",
+        		E_ERROR, "%s::process() expects a non return value (void), %s returned",
         		middleware_class_name->val, ZTYPE_TO_STR(Z_TYPE_P(local_return_action)));
 		}
 
@@ -957,10 +992,14 @@ PHP_METHOD(HttpKernel, terminate)
     response_object* response = 
         ZPHEUR_ZVAL_GET_OBJECT(response_object, return_action);
 
+	char* buffer_ret_src = response->common->output_buffer->val;
+	size_t buffer_ret_len = response->common->output_buffer->len;
+
 	zend_object_release(Z_OBJ_P(return_action));
 	efree(return_action);
-	RETURN_STRINGL(response->common->output_buffer->val, response->common->output_buffer->len);
-}
+
+	RETURN_STRINGL(buffer_ret_src, buffer_ret_len);
+} /* _terminate }}} */
 
 ZEND_MINIT_FUNCTION(Zpheur_Schemes_Http_Foundation_Kernel)
 {

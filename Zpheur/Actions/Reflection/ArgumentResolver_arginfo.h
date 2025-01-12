@@ -10,6 +10,19 @@
 #include "zend_exceptions.h"
 
 
+zend_object_handlers argument_resolver_object_handlers;
+
+typedef struct _argument_resolver_common_t
+{
+    zend_object* container; // don't need release
+} argument_resolver_common_t;
+
+typedef struct _argument_resolver_object
+{
+    argument_resolver_common_t* common;
+    zend_object std;
+} argument_resolver_object;
+
 zend_class_entry* zpheur_actions_reflection_argumentresolver_class_entry;
 
 ZEND_BEGIN_ARG_INFO_EX(ArgumentResolver___construct_arginfo, 0, 0, 1)

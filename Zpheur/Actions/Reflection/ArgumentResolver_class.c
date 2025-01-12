@@ -8,18 +8,6 @@
 #include "ArgumentResolver_arginfo.h"
 #include <Zpheur/Dependencies/ServiceLocator/Container_arginfo.h>
 
-zend_object_handlers argument_resolver_object_handlers;
-
-typedef struct _argument_resolver_common_t
-{
-    zend_object* container; // don't need release
-} argument_resolver_common_t;
-
-typedef struct _argument_resolver_object
-{
-    argument_resolver_common_t* common;
-    zend_object std;
-} argument_resolver_object;
 
 void free_argument_resolver_object(zend_object *object)
 {
