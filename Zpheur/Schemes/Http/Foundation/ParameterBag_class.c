@@ -65,13 +65,13 @@ PHP_METHOD(ParameterBag, __construct)
 
 PHP_METHOD(ParameterBag, set)
 {
-	char*   name_src = NULL;
-	size_t  name_len = 0;
+	char*   key_src = NULL;
+	size_t  key_len = 0;
 
 	zval*   value;
 
 	ZEND_PARSE_PARAMETERS_START(2, 2)
-		Z_PARAM_STRING(name_src, name_len)
+		Z_PARAM_STRING(key_src, key_len)
 		Z_PARAM_ZVAL_OR_NULL(value)
 	ZEND_PARSE_PARAMETERS_END();
 
@@ -81,7 +81,7 @@ PHP_METHOD(ParameterBag, set)
 	zval target_value;
 	ZVAL_COPY(&target_value, value);
 
-	zend_hash_str_update(instance->common->parameters, name_src, name_len, &target_value);
+	zend_hash_str_update(instance->common->parameters, key_src, key_len, &target_value);
 }
 
 PHP_METHOD(ParameterBag, get)
