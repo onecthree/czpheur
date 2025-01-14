@@ -293,7 +293,6 @@ int dotenv_unsafe_parse( char* source_path_src, size_t source_path_len, HashTabl
 				{
 					case TOKEN_SYMBOL_EOF:
 						context->state = STATE_EOF_SCOPE;
-						// value->rvalue = onec_string_initd(de_rvalue.val, de_rvalue.len);
 						value.rvalue = &de_rvalue;
 						fseek(file_env, -1, SEEK_CUR);
 					break;
@@ -326,8 +325,11 @@ int dotenv_unsafe_parse( char* source_path_src, size_t source_path_len, HashTabl
 						context->state = STATE_ESCAPE_SCOPE;
 					break;
 					default:
-						if( type_cast )
+						// tcast_check every char grouping, checking everytime per char
+						// triggering when differential char found for target group (string, integer, float)
+						if( type_cast ) {
 							tcast_check(&tcast_bool_inc, &tcast_numeric_state, context);
+						}
 
                        	onec_string_putlc(de_rvalue, context->input);
                     break;
@@ -375,8 +377,11 @@ int dotenv_unsafe_parse( char* source_path_src, size_t source_path_len, HashTabl
 					case TOKEN_SYMBOL_TABSPACE:
 						context->column += 3; 
 					default:
-						if( type_cast )
+						// tcast_check every char grouping, checking everytime per char
+						// triggering when differential char found for target group (string, integer, float)
+						if( type_cast ) {
 							tcast_check(&tcast_bool_inc, &tcast_numeric_state, context);
+						}
 
                        	onec_string_putlc(de_rvalue, context->input);
                     break;
@@ -420,8 +425,11 @@ int dotenv_unsafe_parse( char* source_path_src, size_t source_path_len, HashTabl
 					case TOKEN_SYMBOL_TABSPACE:
 						context->column += 3;
 					default:
-						if( type_cast )
+						// tcast_check every char grouping, checking everytime per char
+						// triggering when differential char found for target group (string, integer, float)
+						if( type_cast ) {
 							tcast_check(&tcast_bool_inc, &tcast_numeric_state, context);
+						}
 
                        	onec_string_putlc(de_rvalue, context->input);
                     break;
@@ -452,8 +460,12 @@ int dotenv_unsafe_parse( char* source_path_src, size_t source_path_len, HashTabl
 		                switch( tcast_numeric_state )
 		                {
 			                case 0: // long
-		                		ZVAL_LONG(&value_pair, atoi(value.rvalue->val));
-			                break;
+			                	if( value.rvalue->len ) {
+			                		ZVAL_LONG(&value_pair, atoi(value.rvalue->val));
+			                	} else {
+			                		ZVAL_NULL(&value_pair);
+			                	}
+		                	break;
 				            case 1: // float
 				            	ZVAL_DOUBLE(&value_pair, strtod(value.rvalue->val, NULL));
 				            break;
@@ -805,7 +817,6 @@ int dotenv_safe_parse( char* source_path_src, size_t source_path_len, HashTable*
 						context->state = STATE_NEWLINE_SCOPE;
 						value->rvalue = de_rvalue;
 						fseek(file_env, -1, SEEK_CUR);
-
 						// value_context->under_escape = false;
 					break;
 					case TOKEN_SYMBOL_TABSPACE:
@@ -828,8 +839,11 @@ int dotenv_safe_parse( char* source_path_src, size_t source_path_len, HashTable*
 						context->state = STATE_ESCAPE_SCOPE;
 					break;
 					default:
-						if( type_cast )
+						// tcast_check every char grouping, checking everytime per char
+						// triggering when differential char found for target group (string, integer, float)
+						if( type_cast ) {
 							tcast_check(&tcast_bool_inc, &tcast_numeric_state, context);
+						}
 
                        	onec_string_put(de_rvalue, context->input);
                     break;
@@ -944,14 +958,18 @@ int dotenv_safe_parse( char* source_path_src, size_t source_path_len, HashTable*
 
 	                /* get rvalue */
 	                zval value_pair;
-
+	                // php_printf("tcast check '%s' '%s' '%ld'\n", value->lvalue->val, value->rvalue->val, value->rvalue->len);
 	                if( type_cast )
 	                {
 		                switch( tcast_numeric_state )
 		                {
 			                case 0: // long
-		                		ZVAL_LONG(&value_pair, atoi(value->rvalue->val));
-			                break;
+			                	if( value->rvalue->len ) {
+			                		ZVAL_LONG(&value_pair, atoi(value->rvalue->val));
+			                	} else {
+			                		ZVAL_NULL(&value_pair);
+			                	}
+		                	break;
 				            case 1: // float
 				            	ZVAL_DOUBLE(&value_pair, strtod(value->rvalue->val, NULL));
 				            break;
@@ -1088,6 +1106,9 @@ onec_string* dotenv_cache_save( zval* key_value )
         	case IS_FALSE:
         		onec_string_append(env_serialized, 1, Z_STRVAL_P(value));
         	break;
+	        case IS_NULL:
+	        	onec_string_append(env_serialized, 1, "null");
+	        break;
  			default:
         		onec_string_append(env_serialized, 1, "':uknown'");
  			break; 

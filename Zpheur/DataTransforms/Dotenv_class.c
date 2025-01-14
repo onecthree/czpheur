@@ -96,11 +96,12 @@ PHP_METHOD(Dotenv, serialize)
 		Z_PARAM_STRING(cache_path_src, cache_path_len)
 	ZEND_PARSE_PARAMETERS_END();
 
-    zval* key_value = zend_this_read_property("env");
+    zval* key_value = zend_this_read_property("stores");
 
     if( Z_TYPE_P(key_value) != IS_NULL )
     {
-		onec_string* env_serialized = dotenv_cache_save(zend_hash_index_find(Z_ARR_P(key_value), 0));
+		// onec_string* env_serialized = dotenv_cache_save(zend_hash_index_find(Z_ARR_P(key_value), 0));
+		onec_string* env_serialized = dotenv_cache_save(key_value);
 		php_stream* env_serialized_fd =
 			php_stream_open_wrapper_ex(cache_path_src, "w", 0 | REPORT_ERRORS, NULL, NULL);
 	    php_stream_write(env_serialized_fd, env_serialized->val, env_serialized->len); 
