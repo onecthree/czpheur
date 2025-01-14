@@ -608,3 +608,145 @@ int static_furouter_finder( zend_string* route_current, void* target_uri_src, si
     return_not_found:
     return 0;
 }
+
+/**
+ * Application route finder
+ */
+int cliteral_static_furouter_finder( char* route_current_src, size_t route_current_len, void* target_uri_src, size_t target_uri_len, HashTable** placeholder )
+{
+    furouter_finder_context context = {0};
+    onec_stringlc path_value;
+    onec_string_initlc(path_value);
+
+        context.index       = 0;
+        context.path_index  = 0;
+        context.state       = STATE_FINDER_TYPE_SCOPE;
+        context.route_count = 0;
+        
+    while( context.index <= route_current_len ) // follow char length of each route list choosed
+    {
+        context.input = route_current_src[context.index];
+        context.index += 1;
+
+        if( context.path_index >= target_uri_len )
+            goto return_not_found;
+
+        switch( context.state )
+        {
+            case STATE_FINDER_TYPE_SCOPE:
+                context.local_path_len = 0;
+                context.route_count += 1;
+                onec_string_resetlc(path_value);
+                // onec_string_reset(path_value);
+
+                switch( context.input )
+                {
+                    case PATH_IMPL_ASTERIK:
+                        if( ((furouter_target_uri*)target_uri_src)[context.path_index].type == context.input )
+                        {
+                            switch( route_current_src[context.index] )
+                            {   
+                                case TOKEN_SYMBOL_WHITESPACE:
+                                    context.index += 1;
+                                    context.path_index += 1;
+                                break;
+                                default:
+                                    goto early_return;
+                                break;
+                            }
+                        }
+                        else
+                            goto return_not_found;
+                    break;
+                    case PATH_IMPL_ALPHA:
+                    case PATH_IMPL_NUM:
+                    case PATH_IMPL_ALNUM:
+                    case PATH_IMPL_RANDOM:
+                        if( ((furouter_target_uri*)target_uri_src)[context.path_index].type == context.input )
+                            context.state = STATE_FINDER_WORD_CMP_SCOPE;
+                        else
+                            goto return_not_found;
+                    break;
+                    case PLACEHOLDER_IMPL_ALPHA:
+                    case PLACEHOLDER_IMPL_NUM:
+                    case PLACEHOLDER_IMPL_ALNUM:
+                    case PLACEHOLDER_IMPL_RANDOM:
+                        switch( context.input - ((furouter_target_uri*)target_uri_src)[context.path_index].type )
+                        {
+                            case PLACEHOLDER_IMPL_ALPHA - PATH_IMPL_ALPHA:
+                            case PLACEHOLDER_IMPL_NUM - PATH_IMPL_NUM:
+                            case PLACEHOLDER_IMPL_ALNUM - PATH_IMPL_ALNUM:
+                            case PLACEHOLDER_IMPL_RANDOM - PATH_IMPL_RANDOM:
+                                context.state = STATE_FINDER_PLACEHOLDER_SCOPE;
+                            break;
+                            default:
+                                goto return_not_found;
+                            break;
+                        }
+                    break;
+                    case PLACEHOLDER_IMPL_ANY:
+                        if( ((furouter_target_uri*)target_uri_src)[context.path_index].type != PATH_IMPL_ASTERIK )
+                            context.state = STATE_FINDER_PLACEHOLDER_SCOPE;
+                        else
+                            goto return_not_found;
+                    break; 
+                }
+            break;
+            case STATE_FINDER_WORD_CMP_SCOPE:
+                switch( context.input )
+                {
+                    case TOKEN_CHAR_NULL:
+                    case TOKEN_SYMBOL_WHITESPACE:
+                        if( context.local_path_len != (((furouter_target_uri*)target_uri_src)[context.path_index].len) )
+                            goto return_not_found; 
+
+                        context.state = STATE_FINDER_TYPE_SCOPE;
+                        context.path_index += 1;
+                    break;  
+                    default:
+                        if( context.input != ((furouter_target_uri*)target_uri_src)[context.path_index].val[context.local_path_len] )
+                            goto return_not_found;
+                        else
+                            context.local_path_len += 1;
+                    break;
+                }
+            break;
+            case STATE_FINDER_PLACEHOLDER_SCOPE:
+                switch( context.input )
+                {
+                    case TOKEN_CHAR_NULL:
+                    case TOKEN_SYMBOL_WHITESPACE:
+                    {
+                        #ifdef PHP_VERSION
+
+                        onec_string_trimlc(path_value);
+                        zval _segment;
+                        zend_string* placeholder_value =  // Do not release, php keep it track
+                        zend_string_init(
+                            ((furouter_target_uri*)target_uri_src)[context.path_index].val,
+                            ((furouter_target_uri*)target_uri_src)[context.path_index].len,
+                            0
+                        );
+                        ZVAL_STR(&_segment, placeholder_value);
+                        zend_hash_str_update(*placeholder, path_value.val, path_value.len, &_segment);
+                        #endif
+
+                        context.state = STATE_FINDER_TYPE_SCOPE;
+                        context.path_index += 1;
+                    }
+                    break;
+                    default:    
+                        onec_string_putlc(path_value, context.input);
+                    break;
+                }
+            break;
+        }
+    }
+
+    early_return:
+    if( context.route_count == target_uri_len )
+        return 1;
+
+    return_not_found:
+    return 0;
+}

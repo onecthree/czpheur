@@ -10,6 +10,15 @@
 #include "zend_exceptions.h"
 
 
+#define LOCALVERB_GET       716984
+#define LOCALVERB_POST      80798384
+#define LOCALVERB_PUT       808584
+#define LOCALVERB_PATCH     8065846772
+#define LOCALVERB_DELETE    686976698469
+#define LOCALVERB_HEAD      72696568
+#define LOCALVERB_OPTIONS   79808473797883
+#define LOCALVERB_WEBSOCKET 876966837967756984
+
 zend_class_entry* zpheur_schemes_http_routing_route_class_entry;
 
 ZEND_BEGIN_ARG_INFO_EX(Route___construct_arginfo, 0, 0, 0)
