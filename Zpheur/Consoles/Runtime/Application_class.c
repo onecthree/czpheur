@@ -603,9 +603,9 @@ PHP_METHOD(Application, run)
 
 				zval _middleware_class_name; ZVAL_STR(&_middleware_class_name, middleware_class_name);
 				params_resolve[0] = _middleware_class_name;
-				zend_string* _zs_invoke = zend_string_init("__invoke", sizeof("__invoke") - 1, 0);
-				zval _invoke; ZVAL_STR(&_invoke, _zs_invoke);
-				params_resolve[1] = _invoke;
+				zend_string* process_str = zend_string_init("process", sizeof("process") - 1, 0);
+				zval process_param; ZVAL_STR(&process_param, process_str);
+				params_resolve[1] = process_param;
 
 				zval* middleware_params_src =
 					php_class_call_method(argument_resolver, "resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
@@ -622,7 +622,7 @@ PHP_METHOD(Application, run)
 
 					// It should return zval ptr
 					local_return_action =
-					php_class_call_method(middleware_class, "__invoke", sizeof("__invoke") - 1,
+					php_class_call_method(middleware_class, "process", sizeof("process") - 1,
 					middleware_params_len, middleware_params_resolve, 0);
 
 					zend_hash_graceful_reverse_destroy(Z_ARR_P(middleware_params_src));
@@ -632,12 +632,12 @@ PHP_METHOD(Application, run)
 				else
 				{
 					php_error_docref(NULL,
-		        		E_CORE_ERROR, "Call to undefined method %s::__invoke()",
+		        		E_CORE_ERROR, "Call to undefined method %s::process()",
 		        		middleware_class_name->val);
 				}
 
 				efree(middleware_params_src);
-				zend_string_release(_zs_invoke);
+				zend_string_release(process_str);
 				efree(params_resolve);
 			} while(0);
 
@@ -650,7 +650,7 @@ PHP_METHOD(Application, run)
 					if(! EXPECTED(EG(exception)) ) // throw exception
 					{
 						php_error_docref(NULL, E_ERROR,
-							"%s::__invoke() return type must be integer or void",
+							"%s::process() return type must be integer or void",
 							middleware_class_name->val
 						);	
 						break;
