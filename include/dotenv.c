@@ -958,7 +958,6 @@ int dotenv_safe_parse( char* source_path_src, size_t source_path_len, HashTable*
 
 	                /* get rvalue */
 	                zval value_pair;
-	                // php_printf("tcast check '%s' '%s' '%ld'\n", value->lvalue->val, value->rvalue->val, value->rvalue->len);
 	                if( type_cast )
 	                {
 		                switch( tcast_numeric_state )

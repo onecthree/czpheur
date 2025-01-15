@@ -14,15 +14,24 @@
 
 zend_object_handlers dotenv_object_handlers;
 
+typedef struct _change_items
+{
+	size_t line_no;
+	char* key_src;
+	size_t key_len;
+} change_items;
+
 typedef struct _dotenv_t
 {
 	onec_string* source_path;
 	onec_string* cache_path;
+	change_items changes_src[128];
+	size_t changes_len;
 } dotenv_t;
 
 typedef struct _dotenv_object
 {
-    dotenv_t* dotenv;
+    dotenv_t* common;
     zend_object std;
 } dotenv_object;
 
@@ -31,23 +40,23 @@ void free_dotenv_object( zend_object* object )
     dotenv_object* instance = ZPHEUR_GET_OBJECT(dotenv_object, object);
     zend_object_std_dtor(&instance->std);
 
-    if( instance->dotenv ) {
-    	if( instance->dotenv->source_path ) {
-    		onec_string_release(instance->dotenv->source_path);
+    if( instance->common ) {
+    	if( instance->common->source_path ) {
+    		onec_string_release(instance->common->source_path);
     	}
-    	if( instance->dotenv->cache_path ) {
-    		onec_string_release(instance->dotenv->cache_path);
+    	if( instance->common->cache_path ) {
+    		onec_string_release(instance->common->cache_path);
     	}
-    	// if( instance->dotenv->stores ) {
-    	// 	zend_hash_destroy(instance->dotenv->stores);
-    	// 	FREE_HASHTABLE(instance->dotenv->stores);
+    	// if( instance->common->stores ) {
+    	// 	zend_hash_destroy(instance->common->stores);
+    	// 	FREE_HASHTABLE(instance->common->stores);
     	// }
-    	// if( instance->dotenv->comments ) {
-    	// 	zend_hash_destroy(instance->dotenv->comments);
-    	// 	FREE_HASHTABLE(instance->dotenv->comments);   		
+    	// if( instance->common->comments ) {
+    	// 	zend_hash_destroy(instance->common->comments);
+    	// 	FREE_HASHTABLE(instance->common->comments);   		
     	// }
 
-        efree(instance->dotenv);
+        efree(instance->common);
     }
 }
 
@@ -64,9 +73,10 @@ zend_object* create_dotenv_object( zend_class_entry* ce )
     dotenv_object_handlers.free_obj = free_dotenv_object;
     object->std.handlers = &dotenv_object_handlers;
 
-    object->dotenv = emalloc(sizeof(dotenv_t));
-    object->dotenv->source_path = NULL;
-    object->dotenv->cache_path = NULL;
+    object->common = emalloc(sizeof(dotenv_t));
+    object->common->source_path = NULL;
+    object->common->cache_path = NULL;
+    object->common->changes_len = 0;
 
     return &object->std;
 }
@@ -83,7 +93,7 @@ PHP_METHOD(Dotenv, __construct)
     dotenv_object* instance =
     	ZPHEUR_ZVAL_GET_OBJECT(dotenv_object, getThis());
 
-   	instance->dotenv->source_path =
+   	instance->common->source_path =
 		onec_string_initd(source_path_src, source_path_len);
 }
 
@@ -181,7 +191,7 @@ PHP_METHOD(Dotenv, unsafeParse)
     dotenv_object* instance =
     	ZPHEUR_ZVAL_GET_OBJECT(dotenv_object, getThis());
 
-    onec_string* source_path = instance->dotenv->source_path;
+    onec_string* source_path = instance->common->source_path;
 
     HashTable* stores;
     ALLOC_HASHTABLE(stores);
@@ -220,7 +230,7 @@ PHP_METHOD(Dotenv, safeParse)
     dotenv_object* instance =
     	ZPHEUR_ZVAL_GET_OBJECT(dotenv_object, getThis());
 
-    onec_string* source_path = instance->dotenv->source_path;
+    onec_string* source_path = instance->common->source_path;
 
     HashTable* stores;
     ALLOC_HASHTABLE(stores);
@@ -246,9 +256,150 @@ PHP_METHOD(Dotenv, safeParse)
 	RETURN_ZVAL(getThis(), 1, 0);
 }
 
+PHP_METHOD(Dotenv, set)
+{
+	char* key_src = NULL;
+	size_t key_len = 0;
+
+	zval* value = NULL;
+
+	ZEND_PARSE_PARAMETERS_START(2, 2)
+		Z_PARAM_STRING(key_src, key_len)
+		Z_PARAM_ZVAL(value)
+	ZEND_PARSE_PARAMETERS_END();
+
+    dotenv_object* instance =
+    	ZPHEUR_ZVAL_GET_OBJECT(dotenv_object, getThis());
+    zval* stores = zend_this_read_property("stores");
+
+    if(! zend_hash_str_exists(Z_ARR_P(stores), key_src, key_len) ) {
+    	php_error_docref(NULL, E_ERROR, "\"%*s\" key is not exists", (int)key_len, key_src);
+   		RETURN_FALSE;
+    }
+
+    char type = Z_TYPE_P(value);
+   	if(! (1 << type & (MAY_BE_STRING | MAY_BE_LONG | MAY_BE_DOUBLE | MAY_BE_NULL)) ) {
+   		php_error_docref(NULL, E_ERROR, "value must be type of string, integer, float, or null, %s given", ZTYPE_TO_STR(type));
+   		RETURN_FALSE;
+   	}	
+
+    zval* env = zend_hash_str_find(Z_ARR_P(stores), key_src, key_len);
+
+   	size_t* len = &instance->common->changes_len;
+    instance->common->changes_src[*len] = (change_items){
+    	.line_no = zval_get_long(zend_hash_index_find(Z_ARR_P(env), 0)),
+    	.key_src = key_src,
+    	.key_len = key_len,
+    };
+    *len = *len + 1;
+
+    zval number;
+    switch( type ) {
+	    case IS_STRING:
+		    zend_hash_index_update(Z_ARR_P(env), 2, value);
+	    break;
+	    case IS_LONG:
+	    	ZVAL_STR(&number, zend_long_to_str(zval_get_long(value)));
+		    zend_hash_index_update(Z_ARR_P(env), 2, &number);
+	    break;
+	    case IS_DOUBLE:
+	    	ZVAL_STR(&number, zend_double_to_str(zval_get_double(value)));
+		    zend_hash_index_update(Z_ARR_P(env), 2, &number);
+	    break;
+    }
+    zend_hash_index_update(Z_ARR_P(env), 1, value);
+
+	RETURN_TRUE;
+}
+
 PHP_METHOD(Dotenv, save)
 {
 	ZEND_PARSE_PARAMETERS_NONE();
+
+    dotenv_object* instance =
+    	ZPHEUR_ZVAL_GET_OBJECT(dotenv_object, getThis());
+    zval* stores = zend_this_read_property("stores");
+
+   	change_items tmp, *items = instance->common->changes_src;
+    size_t line_changes_size = instance->common->changes_len, lower;
+
+	/* {{{ Sorting lower to high */
+    for( int i = 0; i < line_changes_size; i++ ) {
+    	lower = i;
+
+    	for( int ii = i + 1; ii < line_changes_size; ii++ ) {
+    		if( items[ii].line_no < items[lower].line_no ) {
+    			lower = ii;
+    		}
+    	}
+
+    	tmp = items[lower];
+    	items[lower] = items[i];
+    	items[i] = tmp;
+    }
+    /* }}} */
+
+	FILE* dotenv_fd;
+    char* source_path_src = instance->common->source_path->val;
+    size_t source_path_len = instance->common->source_path->len;
+    source_path_src[source_path_len] = '\0';
+
+    onec_string* buffer;
+    onec_string_init(buffer);
+
+	if(! (dotenv_fd = fopen(source_path_src, "r+")) ) {
+		php_error_docref(NULL, E_ERROR, "%s: Failed to open file", source_path_src);
+		RETURN_NULL();
+	}
+
+	char* line_src = NULL;
+	size_t line_no = 1, line_current = 0, line_len;
+	ssize_t read;
+
+	while( (read = getline(&line_src, &line_len, dotenv_fd)) > -1 ) {
+		if( line_current < line_changes_size && items[line_current].line_no == line_no ) {
+			char* key_src = items[line_current].key_src;
+			size_t key_len = items[line_current].key_len;
+			key_src[key_len] = '\0';
+
+			zval* env = zend_hash_str_find(Z_ARR_P(stores), key_src, key_len);
+			zval* item = zend_hash_index_find(Z_ARR_P(env), 1);
+			zend_string* item_str;
+
+			switch( Z_TYPE_P(item) ) {
+				case IS_STRING:
+					onec_string_append(buffer, 4,  key_src, "='", Z_STRVAL_P(item), "'\n");
+				break;
+				case IS_LONG:
+					item_str = zend_long_to_str(zval_get_long(item));
+					item_str->val[item_str->len] = '\0';
+					onec_string_append(buffer, 4,  key_src, "=", item_str->val, "\n");
+				break;
+				case IS_DOUBLE:
+					item_str = zend_double_to_str(zval_get_double(item));
+					item_str->val[item_str->len] = '\0';
+					onec_string_append(buffer, 4,  key_src, "=", item_str->val, "\n");
+				break;
+				case IS_NULL:
+					onec_string_append(buffer, 2,  key_src, "=\n");
+				break;
+			}
+
+			line_current++;
+		} else {
+			// line_src[line_len] = '\0'; // prev_size error
+			onec_string_append(buffer, 1, line_src);
+		}
+		line_no++;
+	}
+	buffer->val[buffer->len] = '\0';
+
+	rewind(dotenv_fd);
+	fprintf(dotenv_fd, "%*s", (int)buffer->len, buffer->val);
+
+
+	fclose(dotenv_fd);
+	onec_string_release(buffer);
 }
 
 ZEND_MINIT_FUNCTION(Zpheur_DataTransforms_Dotenv)

@@ -37,6 +37,11 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Dotenv_safeParse_arginfo, 0, 2, IS_OBJEC
     ZEND_ARG_TYPE_INFO(0, type_cast, _IS_BOOL, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Dotenv_set_arginfo, 0, 2, _IS_BOOL, 0)
+    ZEND_ARG_TYPE_INFO(0, key, IS_STRING, 0)
+    ZEND_ARG_TYPE_INFO(0, value, IS_STRING | IS_LONG | IS_DOUBLE | IS_NULL, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(Dotenv_save_arginfo, 0, 0, IS_VOID, 0)
 ZEND_END_ARG_INFO();
 
@@ -46,6 +51,7 @@ PHP_METHOD(Dotenv, serialize);
 PHP_METHOD(Dotenv, unserialize);
 PHP_METHOD(Dotenv, unsafeParse);
 PHP_METHOD(Dotenv, safeParse);
+PHP_METHOD(Dotenv, set);
 PHP_METHOD(Dotenv, save);
 
 
@@ -55,6 +61,7 @@ static const zend_function_entry zpheur_datatransforms_dotenv_dotenv_class_metho
     PHP_ME(Dotenv, unserialize, Dotenv_unserialize_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Dotenv, unsafeParse, Dotenv_unsafeParse_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Dotenv, safeParse, Dotenv_safeParse_arginfo, ZEND_ACC_PUBLIC)
+    PHP_ME(Dotenv, set, Dotenv_set_arginfo, ZEND_ACC_PUBLIC)
     PHP_ME(Dotenv, save, Dotenv_save_arginfo, ZEND_ACC_PUBLIC)
 	ZEND_FE_END
 };
