@@ -53,6 +53,7 @@ ZEND_FUNCTION(filetoclass);
 ZEND_FUNCTION(contains);
 ZEND_FUNCTION(csrf_token);
 ZEND_FUNCTION(zpheur_version);
+ZEND_FUNCTION(random_chars);
 
 
 ZEND_MINIT_FUNCTION(Zpheur_Actions_Console_DefaultAction);

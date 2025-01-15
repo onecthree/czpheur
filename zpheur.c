@@ -42,6 +42,7 @@ static PHP_GINIT_FUNCTION(zpheur)
 #include <Zpheur/Functions/filetoclass_arginfo.h>
 #include <Zpheur/Functions/zpheur_version_arginfo.h>
 #include <Zpheur/Strings/contains_arginfo.h>
+#include <Zpheur/Randomizes/random_chars_arginfo.h>
 
 #include <Zpheur/Encryptions/Random/Generator/csrf_token_arginfo.h>
 
@@ -67,12 +68,13 @@ PHP_INI_END();
 static const zend_function_entry ext_functions[] = {
 	ZEND_NS_FE("Zpheur\\Globals", httpverb, httpverb_arginfo)
 	ZEND_NS_FE("Zpheur\\Globals", is_appns, is_appns_arginfo)
-	ZEND_NS_FE("Zpheur\\Globals", clfile, arginfo_clfile)
+	ZEND_NS_FE("Zpheur\\Globals", clfile, clfile_arginfo)
 	ZEND_NS_FE("Zpheur\\Globals", filetoclass, filetoclass_arginfo)
 	ZEND_FE(zpheur_version, zpheur_version_arginfo)
 
 	ZEND_NS_FE("Zpheur\\Strings", contains, contains_arginfo)
 	ZEND_NS_FE("Zpheur\\Encryptions\\Random\\Generator", csrf_token, csrf_token_arginfo)
+	ZEND_NS_FE("Zpheur\\Randomizes", random_chars, random_chars_arginfo)
 
 	ZEND_FE_END
 };

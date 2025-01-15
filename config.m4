@@ -110,6 +110,7 @@ if test "$PHP_ZPHEUR" != "no"; then
       Zpheur/Databases/Phase/Model_class.c                              \
       Zpheur/Databases/Phase/Schema/AbstractionType_class.c             \
       Zpheur/Databases/Phase/Schema/Attributes_class.c                  \
+      Zpheur/Randomizes/random_chars_function.c                         \
       Zpheur/Logs/StreamLog_class.c                                     \
       Zpheur/Logs/StreamLog/StreamHandler_class.c                       \
       Zpheur/Logs/StreamLog/Level_class.c                               \
@@ -117,6 +118,7 @@ if test "$PHP_ZPHEUR" != "no"; then
       Zpheur/Encryptions/Random/Generator/csrf_token_function.c         \
       include/libstr.c                                                  \
       include/onecstr.c                                                 \
+      include/random.c                                                  \
       include/runtime.c                                                 \
       include/regexp.c                                                  \
       include/dotenv.c                                                  \
