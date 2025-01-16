@@ -82,7 +82,6 @@ void free_container_object_context( container_t* container )
 
 void free_container_object( zend_object* object )
 {
-    // php_printf("clean up from free container\n");
     container_object* instance = ZPHEUR_GET_OBJECT(container_object, object);
     zend_object_std_dtor(&instance->std);
 
@@ -405,46 +404,39 @@ PHP_METHOD(Container, getService)
         zval zv___construct; ZVAL_STR(&zv___construct, __construct);
         params_resolve[1] = zv___construct;
 
-        zval* params_of_resolve =
-            php_class_call_method(argument_resolver,
-                "resolve", sizeof("resolve") - 1,
-                2, params_resolve, 0
-            );
+        zval params_of_resolve;
+        php_class_call_method_stacked(argument_resolver, "resolve", sizeof("resolve") - 1,
+            2, params_resolve, &params_of_resolve, 0);
 
         efree(params_resolve);
         zend_string_release(__construct);
 
-        if( Z_TYPE_P(params_of_resolve) == IS_NULL )
-        {
+        if( Z_TYPE(params_of_resolve) == IS_NULL ) {
             php_class_call_constructor(target_class, 0, NULL);
-        }
-        else
-        {
-            zend_long params_num = zend_hash_num_elements(Z_ARR_P(params_of_resolve));
+        } else {
+            zend_long params_num = zend_hash_num_elements(Z_ARR(params_of_resolve));
             zval* params___construct = safe_emalloc(params_num, sizeof(zval), 0);
-            ZEND_HASH_FOREACH_NUM_KEY_VAL(Z_ARR_P(params_of_resolve), zend_long index, zval* service)
+            ZEND_HASH_FOREACH_NUM_KEY_VAL(Z_ARR(params_of_resolve), zend_long index, zval* service)
             {
                 params___construct[index] = *service;
             }
             ZEND_HASH_FOREACH_END();
             php_class_call_constructor(target_class, params_num, params___construct);
 
-            zend_hash_destroy(Z_ARR_P(params_of_resolve));
-            FREE_HASHTABLE(Z_ARR_P(params_of_resolve));
+            zend_hash_destroy(Z_ARR(params_of_resolve));
+            FREE_HASHTABLE(Z_ARR(params_of_resolve));
             efree(params___construct);
         }
-        efree(params_of_resolve);
+        // efree(params_of_resolve);
 
-        zval* return_self =
-            php_class_call_method(target_class, "__service", sizeof("__service") - 1, 0, NULL, 0);
+        zval return_self;
+            php_class_call_method_stacked(target_class, "__service", sizeof("__service") - 1, 0, NULL, &return_self, 0);
 
-        container_class_add_service(instance->container, service_name->val, service_name->len, return_self, false);
-        service = *return_self;
+        container_class_add_service(instance->container, service_name->val, service_name->len, &return_self, false);
+        service = return_self;
 
-        efree(return_self);
-    }
-    else // class are not exists
-    {
+        // efree(return_self);
+    } else { // class are not exists 
         php_error_docref(NULL, E_ERROR, 
             "parameter ($%s) not found in container list or class does not exist", service_name->val
         );
@@ -482,8 +474,7 @@ PHP_METHOD(Container, getServiceFromArray)
         zend_object* argument_class;
         zval* argument_scalar;
 
-        if( zend_string_equals_cstr(service_name, CONTAINER_CLASS_NAME_SRC, CONTAINER_CLASS_NAME_LEN) )
-        {   
+        if( zend_string_equals_cstr(service_name, CONTAINER_CLASS_NAME_SRC, CONTAINER_CLASS_NAME_LEN) ) {   
             zval copy;
             ZVAL_COPY(&copy, getThis());
             zend_hash_next_index_insert(arguments, &copy);
@@ -491,8 +482,7 @@ PHP_METHOD(Container, getServiceFromArray)
         }
 
         // If class exists 
-        if( (argument_class = container_class_find(instance->container, service_name)) )
-        {   
+        if( (argument_class = container_class_find(instance->container, service_name)) ) {   
             zval arguments_ret;
             ZVAL_OBJ(&arguments_ret, argument_class);
             Z_ADDREF_P(&arguments_ret); // Try to increment for long-live scope
@@ -501,8 +491,7 @@ PHP_METHOD(Container, getServiceFromArray)
         }
 
         // If scalar exists
-        if( (argument_scalar = container_scalar_find(instance->container, service_name)) )
-        {
+        if( (argument_scalar = container_scalar_find(instance->container, service_name)) ) {
             Z_ADDREF_P(argument_scalar);
             zend_hash_next_index_insert(arguments, argument_scalar);
             goto end_check;
@@ -511,8 +500,7 @@ PHP_METHOD(Container, getServiceFromArray)
         zend_object* target_class =
             php_class_init_silent(service_name->val, service_name->len);
 
-        if( target_class )
-        {   
+        if( target_class ) {   
             zval* params_resolve = safe_emalloc(2, sizeof(zval), 0);
             zval zv_service_name; ZVAL_STR(&zv_service_name, service_name);
             params_resolve[0] = zv_service_name;
@@ -520,46 +508,39 @@ PHP_METHOD(Container, getServiceFromArray)
             zval zv___construct; ZVAL_STR(&zv___construct, __construct);
             params_resolve[1] = zv___construct;
 
-            zval* params_of_resolve =
-                php_class_call_method(argument_resolver,
-                    "resolve", sizeof("resolve") - 1,
-                    2, params_resolve, 0
-                );
+            zval params_of_resolve;
+                php_class_call_method_stacked(argument_resolver, "resolve", sizeof("resolve") - 1, 2,
+                    params_resolve, &params_of_resolve, 0);
 
             efree(params_resolve);
             zend_string_release(__construct);
 
-            if( Z_TYPE_P(params_of_resolve) == IS_NULL )
-            {
+            if( Z_TYPE(params_of_resolve) == IS_NULL ) {
                 php_class_call_constructor(target_class, 0, NULL);
-            }
-            else
-            {
-                zend_long params_num = zend_hash_num_elements(Z_ARR_P(params_of_resolve));
+            } else {
+                zend_long params_num = zend_hash_num_elements(Z_ARR(params_of_resolve));
                 zval* params___construct = safe_emalloc(params_num, sizeof(zval), 0);
-                ZEND_HASH_FOREACH_NUM_KEY_VAL(Z_ARR_P(params_of_resolve), zend_long index, zval* service)
+                ZEND_HASH_FOREACH_NUM_KEY_VAL(Z_ARR(params_of_resolve), zend_long index, zval* service)
                 {
                     params___construct[index] = *service;
                 }
                 ZEND_HASH_FOREACH_END();
                 php_class_call_constructor(target_class, params_num, params___construct);
 
-                zend_hash_destroy(Z_ARR_P(params_of_resolve));
-                FREE_HASHTABLE(Z_ARR_P(params_of_resolve));
+                zend_hash_destroy(Z_ARR(params_of_resolve));
+                FREE_HASHTABLE(Z_ARR(params_of_resolve));
                 efree(params___construct);
             }
-            efree(params_of_resolve);
+            // efree(params_of_resolve);
 
-            zval* return_self =
-                php_class_call_method(target_class, "__service", sizeof("__service") - 1, 0, NULL, 0);
+            zval return_self;
+            php_class_call_method_stacked(target_class, "__service", sizeof("__service") - 1, 0, NULL, &return_self, 0);
 
-            container_class_add_service(instance->container, service_name->val, service_name->len, return_self, false);
-            zend_hash_next_index_insert(arguments, return_self);
+            container_class_add_service(instance->container, service_name->val, service_name->len, &return_self, false);
+            zend_hash_next_index_insert(arguments, &return_self);
 
-            efree(return_self);
-        }
-        else // class are not exists
-        {
+            // efree(return_self);
+        } else { // class are not exists
             // zval arguments_ret;
             // ZVAL_NULL(&arguments_ret);   
             // zend_hash_next_index_insert(arguments, &arguments_ret);
@@ -597,19 +578,16 @@ PHP_METHOD(Container, listAllServices)
     ALLOC_HASHTABLE(services);
     zend_hash_init(services, 0, NULL, ZVAL_PTR_DTOR, 0);
 
-    if( strncmp("classes", from_service_src, sizeof("classes")-1) == 0 )
-    {
+    if( strncmp("classes", from_service_src, sizeof("classes") - 1) == 0 ) {
         if( only_key_name ) {
-            for( int i = 0; i < instance->container->classes_len; i++ )
-            {
+            for( int i = 0; i < instance->container->classes_len; i++ ) {
                 container_class_pack pack = instance->container->classes_src[i];
                 zend_string* pack_name = zend_string_init(pack.class_name->val, pack.class_name->len, 0);
                 zval _pack_name; ZVAL_STR(&_pack_name, pack_name);
                 zend_hash_next_index_insert(services, &_pack_name);
             }
         } else {
-            for( int i = 0; i < instance->container->classes_len; i++ )
-            {
+            for( int i = 0; i < instance->container->classes_len; i++ ) {
                 container_class_pack pack = instance->container->classes_src[i];
                 zval object; ZVAL_OBJ_COPY(&object, pack.object);
                 zend_hash_str_update(services, pack.class_name->val, pack.class_name->len, &object);
@@ -619,19 +597,16 @@ PHP_METHOD(Container, listAllServices)
         goto skip_error;
     }
 
-    if( strncmp("scalars", from_service_src, sizeof("scalars")-1) == 0 )
-    {
+    if( strncmp("scalars", from_service_src, sizeof("scalars")-1) == 0 ) {
         if( only_key_name ) {
-            for( int i = 0; i < instance->container->classes_len; i++ )
-            {
+            for( int i = 0; i < instance->container->classes_len; i++ ) {
                 container_scalar_pack pack = instance->container->scalars_src[i];
                 zend_string* pack_name = zend_string_init(pack.scalar_name->val, pack.scalar_name->len, 0);
                 zval _pack_name; ZVAL_STR(&_pack_name, pack_name);
                 zend_hash_next_index_insert(services, &_pack_name);
             }
         } else {
-            for( int i = 0; i < instance->container->scalars_len; i++ )
-            {
+            for( int i = 0; i < instance->container->scalars_len; i++ ) {
                 container_scalar_pack pack = instance->container->scalars_src[i];
                 zval copy; ZVAL_COPY(&copy, pack.value);
                 zend_hash_str_update(services, pack.scalar_name->val, pack.scalar_name->len, &copy);
@@ -680,10 +655,8 @@ PHP_METHOD(Container, setScalar)
         Z_PARAM_ZVAL(value)
     ZEND_PARSE_PARAMETERS_END();
 
-    if( Z_TYPE_P(value) == IS_ARRAY )
-    {
-        if(! zend_hash_num_elements(Z_ARR_P(value)) )
-        {        
+    if( Z_TYPE_P(value) == IS_ARRAY ) {
+        if(! zend_hash_num_elements(Z_ARR_P(value)) ) {        
             php_error_docref(NULL, E_ERROR,
                 "Argument #2 ($value) cannot be empty array"
             );
@@ -706,9 +679,7 @@ PHP_METHOD(Container, setScalar)
             //     );
             // }
 
-            if( !( (1 << Z_TYPE_P(_value)) & 
-                (BITW_IS_STRING | BITW_IS_LONG | BITW_IS_DOUBLE)) )
-            {
+            if( !( (1 << Z_TYPE_P(_value)) & (BITW_IS_STRING | BITW_IS_LONG | BITW_IS_DOUBLE)) ) {
                 php_error_docref(NULL, E_ERROR,
                     "Array value from argument #2 ($value) must be type of string, integer, or double, %s given for key ('%s')",
                     ZTYPE_TO_STR(Z_TYPE_P(_value)), key->val
@@ -717,9 +688,7 @@ PHP_METHOD(Container, setScalar)
         }
         ZEND_HASH_FOREACH_END();
     } else
-    if( !( (1 << Z_TYPE_P(value)) & 
-        (BITW_IS_STRING | BITW_IS_LONG | BITW_IS_DOUBLE)) )
-    {
+    if( !( (1 << Z_TYPE_P(value)) & (BITW_IS_STRING | BITW_IS_LONG | BITW_IS_DOUBLE)) ) {
         php_error_docref(NULL, E_ERROR,
             "Argument #2 ($value) must be type of string, integer, double, or array, %s given for key ($%s)",
             ZTYPE_TO_STR(Z_TYPE_P(value)), name_src
@@ -740,15 +709,13 @@ PHP_METHOD(Container, setClassFromArray)
         Z_PARAM_ARRAY_HT(services)
     ZEND_PARSE_PARAMETERS_END();
 
-    if(! zend_hash_num_elements(services) )
-    {
+    if(! zend_hash_num_elements(services) ) {
         php_error_docref(NULL, E_ERROR,
             "Argument #1 ($services) can not be empty array"
         );
     }
 
-    if(! EXPECTED(HT_IS_PACKED(services)) )
-    {
+    if(! EXPECTED(HT_IS_PACKED(services)) ) {
         php_error_docref(NULL, E_ERROR,
             "Argument #1 ($services) must be packed array instead array of key-value"
         );
@@ -759,8 +726,7 @@ PHP_METHOD(Container, setClassFromArray)
 
     ZEND_HASH_FOREACH_VAL(services, zval* service)
     {
-        if( Z_TYPE_P(service) != IS_OBJECT )
-        {
+        if( Z_TYPE_P(service) != IS_OBJECT ) {
             php_error_docref(NULL, E_ERROR,
                 "Array value of argument #1 ($services) must be type of object, %s given",
                 ZTYPE_TO_STR(Z_TYPE_P(service))
@@ -784,15 +750,13 @@ PHP_METHOD(Container, setScalarFromArray)
         Z_PARAM_ARRAY_HT(values)
     ZEND_PARSE_PARAMETERS_END();
 
-    if(! zend_hash_num_elements(values) )
-    {
+    if(! zend_hash_num_elements(values) ) {
         php_error_docref(NULL, E_ERROR,
             "Argument #1 ($values) can not be empty array"
         );
     }
 
-    if( EXPECTED(HT_IS_PACKED(values)) )
-    {
+    if( EXPECTED(HT_IS_PACKED(values)) ) {
         php_error_docref(NULL, E_ERROR,
             "Argument #1 ($values) must be array of key-value instead packed array"
         );
@@ -800,23 +764,19 @@ PHP_METHOD(Container, setScalarFromArray)
 
     ZEND_HASH_FOREACH_STR_KEY_VAL(values, zend_string* key, zval* value)
     {
-        if(! key )
-        {
+        if(! key ) {
             php_error_docref(NULL, E_ERROR,
                 "Key of array from argument #1 ($values) must be type of string"
             );
         }
 
-        if( Z_TYPE_P(value) == IS_ARRAY )
-        {
+        if( Z_TYPE_P(value) == IS_ARRAY ) {
             php_error_docref(NULL, E_ERROR,
                 "Array value of argument #1 ($values) from key ($%s) is array, use Zpheur\\Dependencies\\ServiceLocator\\Container::setScalar() instead",
                 key->val
             );
         } else
-        if( !( (1 << Z_TYPE_P(value)) & 
-            (BITW_IS_STRING | BITW_IS_LONG | BITW_IS_DOUBLE)) )
-        {
+        if( !( (1 << Z_TYPE_P(value)) & (BITW_IS_STRING | BITW_IS_LONG | BITW_IS_DOUBLE)) ) {
             php_error_docref(NULL, E_ERROR,
                 "Array value of argument #1 ($values) must be type of string, integer, double, or array, %s given for key ($%s)",
                 ZTYPE_TO_STR(Z_TYPE_P(value)), key->val
@@ -843,11 +803,13 @@ PHP_METHOD(Container, hasService)
 
     container_object* instance = ZPHEUR_ZVAL_GET_OBJECT(container_object, getThis());
 
-    if( container_class_exists(instance->container, name_src, name_len) )
+    if( container_class_exists(instance->container, name_src, name_len) ) {
         RETURN_TRUE;
+    }
 
-    if( container_scalar_exists(instance->container, name_src, name_len) )
+    if( container_scalar_exists(instance->container, name_src, name_len) ) {
         RETURN_TRUE;
+    }
 
     RETURN_FALSE;
 }
