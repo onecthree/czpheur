@@ -142,7 +142,7 @@ PHP_METHOD(InputArgument, getValue)
     zval* argument =
     	zend_hash_index_find(instance->common->value, index);
 
-    if( !argument || !((1 << Z_TYPE_P(argument)) & BITW_IS_STRING) )
+    if( !argument || !((1 << Z_TYPE_P(argument)) & MAY_BE_STRING) )
     	RETURN_NULL();
 
     Z_ADDREF_P(argument);

@@ -643,7 +643,7 @@ PHP_METHOD(Application, run)
 
 			switch( (1 << Z_TYPE_P(local_return_action)) )
 			{
-				case BITW_IS_NULL: 
+				case MAY_BE_NULL: 
 					efree(local_return_action);
 				break; // Ignore null return or void
 				default:
@@ -655,7 +655,7 @@ PHP_METHOD(Application, run)
 						);	
 						break;
 					}
-				case BITW_IS_LONG:
+				case MAY_BE_LONG:
 					efree(local_return_action);
 					zend_object_release(middleware_class);
 					zend_string_release(middleware_class_name);
@@ -772,7 +772,7 @@ PHP_METHOD(Application, run)
 
 			switch( (1 << Z_TYPE_P(local_return_action)) )
 			{
-				case BITW_IS_LONG:
+				case MAY_BE_LONG:
 					efree(local_return_action);
 				break;
 				default:
@@ -913,7 +913,7 @@ PHP_METHOD(Application, terminate)
 
 		switch( (1 << Z_TYPE_P(local_return_action)) )
 		{
-			case BITW_IS_LONG:
+			case MAY_BE_LONG:
 				efree(local_return_action);
 			break;
 			default:

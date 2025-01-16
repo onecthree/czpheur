@@ -27,15 +27,15 @@
 #include <include/runtime.h>
 #include <Zpheur/Schemes/Http/Message/Response_arginfo.h>
 #include <Zpheur/Actions/Reflection/ArgumentResolver_arginfo.h>
-#include <Zpheur/Schemes/Http/Message/ResponseInterface_arginfo.h>
+#include <Zpheur/Schemes/Http/Message/Response/ResponseInterface_arginfo.h>
 #include "ParameterBag_arginfo.h"
 #include "Kernel_arginfo.h"
 
 
 #define L_HTTP_RESPONSE_SRC "Zpheur\\Schemes\\Http\\Message\\Response"
 #define L_HTTP_RESPONSE_LEN sizeof("Zpheur\\Schemes\\Http\\Message\\Response") - 1
-#define L_HTTP_HEADERINTERFACE_SRC "Zpheur\\Schemes\\Http\\Message\\ResponseInterface"
-#define L_HTTP_HEADERINTERFACE_LEN sizeof("Zpheur\\Schemes\\Http\\Message\\ResponseInterface") - 1
+#define L_HTTP_RESPONSEINTERFACE_SRC "Zpheur\\Schemes\\Http\\Message\\Response\\ResponseInterface"
+#define L_HTTP_RESPONSEINTERFACE_LEN sizeof("Zpheur\\Schemes\\Http\\Message\\Response\\ResponseInterface") - 1
 
 zend_object_handlers kernel_object_handlers;
 
@@ -297,8 +297,8 @@ PHP_METHOD(HttpKernel, handle)
 
 		switch( (1 << Z_TYPE_P(local_return_action)) )
 		{
-			case BITW_IS_NULL: break; // Ignore null return or void
-			case BITW_IS_OBJECT:
+			case MAY_BE_NULL: break; // Ignore null return or void
+			case MAY_BE_OBJECT:
 			{
 				zend_object* object = Z_OBJ_P(local_return_action);
 				if( zend_string_equals_cstr(object->ce->name, L_HTTP_RESPONSE_SRC, L_HTTP_RESPONSE_LEN) ||
@@ -440,15 +440,15 @@ PHP_METHOD(HttpKernel, handle)
 
 		switch( (1 << Z_TYPE_P(local_return_action)) )
 		{
-			case BITW_IS_OBJECT:
+			case MAY_BE_OBJECT:
 			{
 				zend_object* object = Z_OBJ_P(local_return_action);
 
 				if(! zend_class_implements_interface(object->ce, 
-					zpheur_schemes_http_message_headerinterface_class_entry) ) {
+					zpheur_schemes_http_message_response_responseinterface_class_entry) ) {
 
 					php_error_docref(NULL, E_ERROR,
-						"%s must implement the interface " L_HTTP_HEADERINTERFACE_SRC,
+						"%s must implement the interface " L_HTTP_RESPONSEINTERFACE_SRC,
 						object->ce->name->val
 					);
 				}
@@ -635,7 +635,7 @@ PHP_METHOD(HttpKernel, handle)
 			zend_object_release(middleware_class);
 			zend_string_release(middleware_class_name);
 
-			if(! ((1 << Z_TYPE_P(local_return_action)) & BITW_IS_NULL) )
+			if(! ((1 << Z_TYPE_P(local_return_action)) & MAY_BE_NULL) )
 			{
 				php_error_docref(NULL,
 	        		E_ERROR, "%s::process() expects a non return value (void), %s returned",
@@ -785,15 +785,15 @@ PHP_METHOD(HttpKernel, terminate)
 
 		switch( (1 << Z_TYPE_P(return_action)) )
 		{
-			case BITW_IS_OBJECT:
+			case MAY_BE_OBJECT:
 			{
 				zend_object* object = Z_OBJ_P(return_action);
 
 				if(! zend_class_implements_interface(object->ce, 
-					zpheur_schemes_http_message_headerinterface_class_entry) ) {
+					zpheur_schemes_http_message_response_responseinterface_class_entry) ) {
 
 					php_error_docref(NULL, E_ERROR,
-						"%s must implement the interface " L_HTTP_HEADERINTERFACE_SRC,
+						"%s must implement the interface " L_HTTP_RESPONSEINTERFACE_SRC,
 						object->ce->name->val
 					);
 				}
@@ -974,7 +974,7 @@ PHP_METHOD(HttpKernel, terminate)
 		zend_object_release(middleware_class);
 		zend_string_release(middleware_class_name);
 
-		if(! ((1 << Z_TYPE_P(local_return_action)) & BITW_IS_NULL) )
+		if(! ((1 << Z_TYPE_P(local_return_action)) & MAY_BE_NULL) )
 		{
 			php_error_docref(NULL,
         		E_ERROR, "%s::process() expects a non return value (void), %s returned",

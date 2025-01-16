@@ -62,12 +62,12 @@ void free_container_object_context( container_t* container )
 
             zend_uchar type = Z_TYPE_P(pack.value);
 
-            if( (1 << type) & (BITW_IS_ARRAY) ) {
+            if( (1 << type) & (MAY_BE_ARRAY) ) {
                 zend_hash_destroy(Z_ARR_P(pack.value));
                 FREE_HASHTABLE(Z_ARR_P(pack.value));
             }
 
-            if( (1 << type) & (BITW_IS_STRING) ) {
+            if( (1 << type) & (MAY_BE_STRING) ) {
                 zend_string_release(Z_STR_P(pack.value));
             }
 
@@ -102,12 +102,12 @@ void free_container_object( zend_object* object )
 
             zend_uchar type = Z_TYPE_P(pack.value);
 
-            if( (1 << type) & (BITW_IS_ARRAY) ) {
+            if( (1 << type) & (MAY_BE_ARRAY) ) {
                 zend_hash_destroy(Z_ARR_P(pack.value));
                 FREE_HASHTABLE(Z_ARR_P(pack.value));
             }
 
-            if( (1 << type) & (BITW_IS_STRING) ) {
+            if( (1 << type) & (MAY_BE_STRING) ) {
                 zend_string_release(Z_STR_P(pack.value));
             }
 
@@ -300,7 +300,7 @@ container_scalar_add_service( container_t* container, char* name_src, size_t nam
             if( Z_ISREF_P(pack.value) )
                 zend_unwrap_reference(pack.value);
 
-            if( (1 << Z_TYPE_P(pack.value)) & (BITW_IS_ARRAY) )
+            if( (1 << Z_TYPE_P(pack.value)) & (MAY_BE_ARRAY) )
             {
                 /**
                  * TODO: under issue
@@ -679,7 +679,7 @@ PHP_METHOD(Container, setScalar)
             //     );
             // }
 
-            if( !( (1 << Z_TYPE_P(_value)) & (BITW_IS_STRING | BITW_IS_LONG | BITW_IS_DOUBLE)) ) {
+            if( !( (1 << Z_TYPE_P(_value)) & (MAY_BE_STRING | MAY_BE_LONG | MAY_BE_DOUBLE)) ) {
                 php_error_docref(NULL, E_ERROR,
                     "Array value from argument #2 ($value) must be type of string, integer, or double, %s given for key ('%s')",
                     ZTYPE_TO_STR(Z_TYPE_P(_value)), key->val
@@ -688,7 +688,7 @@ PHP_METHOD(Container, setScalar)
         }
         ZEND_HASH_FOREACH_END();
     } else
-    if( !( (1 << Z_TYPE_P(value)) & (BITW_IS_STRING | BITW_IS_LONG | BITW_IS_DOUBLE)) ) {
+    if( !( (1 << Z_TYPE_P(value)) & (MAY_BE_STRING | MAY_BE_LONG | MAY_BE_DOUBLE)) ) {
         php_error_docref(NULL, E_ERROR,
             "Argument #2 ($value) must be type of string, integer, double, or array, %s given for key ($%s)",
             ZTYPE_TO_STR(Z_TYPE_P(value)), name_src
@@ -776,7 +776,7 @@ PHP_METHOD(Container, setScalarFromArray)
                 key->val
             );
         } else
-        if( !( (1 << Z_TYPE_P(value)) & (BITW_IS_STRING | BITW_IS_LONG | BITW_IS_DOUBLE)) ) {
+        if( !( (1 << Z_TYPE_P(value)) & (MAY_BE_STRING | MAY_BE_LONG | MAY_BE_DOUBLE)) ) {
             php_error_docref(NULL, E_ERROR,
                 "Array value of argument #1 ($values) must be type of string, integer, double, or array, %s given for key ($%s)",
                 ZTYPE_TO_STR(Z_TYPE_P(value)), key->val
