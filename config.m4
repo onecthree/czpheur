@@ -81,8 +81,11 @@ if test "$PHP_ZPHEUR" != "no"; then
       Zpheur/Actions/Middleware_class.c                                 \
       Zpheur/Actions/Reflection/ActionResolver_class.c                  \
       Zpheur/Actions/Reflection/ArgumentResolver_class.c                \
-      Zpheur/Caches/Adapter/Filesystem/ItemTagHandler_class.c           \
+      Zpheur/Caches/SimpleCache_class.c                                 \
+      Zpheur/Caches/SimpleCache/CacheInterface_class.c                  \
       Zpheur/Caches/Adapter/Filesystem_class.c                          \
+      Zpheur/Caches/Adapter/Filesystem/ItemTagHandler_class.c           \
+      Zpheur/Caches/Adapter/Memcached_class.c                           \
       Zpheur/Consoles/Input/InputArgument_class.c                       \
       Zpheur/Consoles/Runtime/Application_class.c                       \
       Zpheur/DataTransforms/Dotenv_class.c                              \
@@ -92,8 +95,8 @@ if test "$PHP_ZPHEUR" != "no"; then
       Zpheur/Schemes/Http/Foundation/InputBag_class.c                   \
       Zpheur/Schemes/Http/Foundation/Kernel_class.c                     \
       Zpheur/Schemes/Http/Foundation/ServerBag_class.c                  \
-      Zpheur/Schemes/Http/Message/RequestInterface_class.c              \
-      Zpheur/Schemes/Http/Message/ResponseInterface_class.c             \
+      Zpheur/Schemes/Http/Message/Request/RequestInterface_class.c              \
+      Zpheur/Schemes/Http/Message/Response/ResponseInterface_class.c             \
       Zpheur/Schemes/Http/Message/HeaderTrait_class.c                   \
       Zpheur/Schemes/Http/Message/Request_class.c                       \
       Zpheur/Schemes/Http/Message/Response_class.c                      \
@@ -116,7 +119,7 @@ if test "$PHP_ZPHEUR" != "no"; then
       Zpheur/Logs/StreamLog/Level_class.c                               \
       Zpheur/Strings/contains_function.c                                \
       Zpheur/Encryptions/Random/Generator/csrf_token_function.c         \
-      include/libstr.c                                                  \
+      include/strings.c                                                  \
       include/onecstr.c                                                 \
       include/random.c                                                  \
       include/runtime.c                                                 \
