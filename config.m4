@@ -77,8 +77,8 @@ if test "$PHP_ZPHEUR" != "no"; then
       Zpheur/Actions/Console/DefaultAction_class.c                      \
       Zpheur/Actions/Http/DefaultAction_class.c                         \
       Zpheur/Actions/WebSocket/DefaultAction_class.c                    \
-      Zpheur/Actions/Middleware/Next_class.c                            \
       Zpheur/Actions/Middleware_class.c                                 \
+      Zpheur/Actions/Middleware/InvalidArgumentException_class.c        \
       Zpheur/Actions/Reflection/ActionResolver_class.c                  \
       Zpheur/Actions/Reflection/ArgumentResolver_class.c                \
       Zpheur/Caches/SimpleCache_class.c                                 \

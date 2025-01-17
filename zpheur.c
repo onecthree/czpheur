@@ -66,10 +66,10 @@ PHP_INI_BEGIN()
 PHP_INI_END();
 
 static const zend_function_entry ext_functions[] = {
-	ZEND_NS_FE("Zpheur\\Globals", httpverb, httpverb_arginfo)
-	ZEND_NS_FE("Zpheur\\Globals", is_appns, is_appns_arginfo)
-	ZEND_NS_FE("Zpheur\\Globals", clfile, clfile_arginfo)
-	ZEND_NS_FE("Zpheur\\Globals", filetoclass, filetoclass_arginfo)
+	ZEND_NS_FE("Zpheur\\Functions", httpverb, httpverb_arginfo)
+	ZEND_NS_FE("Zpheur\\Functions", is_appns, is_appns_arginfo)
+	ZEND_NS_FE("Zpheur\\Functions", clfile, clfile_arginfo)
+	ZEND_NS_FE("Zpheur\\Functions", filetoclass, filetoclass_arginfo)
 	ZEND_FE(zpheur_version, zpheur_version_arginfo)
 
 	ZEND_NS_FE("Zpheur\\Strings", contains, contains_arginfo)
@@ -122,10 +122,9 @@ static PHP_MINIT_FUNCTION(zpheur)
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Console_DefaultAction)(INIT_FUNC_ARGS_PASSTHRU);
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Http_DefaultAction)(INIT_FUNC_ARGS_PASSTHRU);
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_WebSocket_DefaultAction)(INIT_FUNC_ARGS_PASSTHRU);
-
-
-	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Middleware_Next)(INIT_FUNC_ARGS_PASSTHRU);
+  	
 	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Middleware)(INIT_FUNC_ARGS_PASSTHRU);
+	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Middleware_InvalidArgumentException)(INIT_FUNC_ARGS_PASSTHRU);
 
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Reflection_ActionResolver)(INIT_FUNC_ARGS_PASSTHRU);
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Reflection_ArgumentResolver)(INIT_FUNC_ARGS_PASSTHRU);

@@ -12,6 +12,7 @@
 #include <zpheur.h>
 #include <include/runtime.h>
 #include <zpheur.h>
+#include <Zpheur/Actions/Middleware/InvalidArgumentException_arginfo.h>
 #include "Middleware_arginfo.h"
 
 zend_object_handlers middleware_object_handlers;
@@ -149,16 +150,25 @@ PHP_METHOD(Middleware, __construct)
     middleware_route* cached_middlewares_src = 
         instance->common->cached_middlewares_src;
 
+    if( EXPECTED(HT_IS_INITIALIZED(middlewares)) && EXPECTED(HT_IS_PACKED(middlewares)) ) {
+        zend_throw_exception_ex(zpheur_caches_middleware_invalidargumentexception_class_entry, 0,
+            "Unexpected array format");
+
+        RETURN_THROWS();
+    }
+
     ZEND_HASH_FOREACH_STR_KEY_VAL(middlewares, zend_string* key, zval* middleware)
     {
-        if(! key )
-        {
-            php_error_docref(NULL, E_ERROR, "key must be stringable of class name");
+        if(! key ) {
+            zend_throw_exception_ex(zpheur_caches_middleware_invalidargumentexception_class_entry, 0,
+                "Key ($action) must be type of string, int given");
+            RETURN_THROWS();
         }
 
-        if( Z_TYPE_P(middleware) != IS_ARRAY )
-        {
-            php_error_docref(NULL, E_ERROR, "middleware list must be type of array");
+        if( Z_TYPE_P(middleware) != IS_ARRAY ) {
+            zend_throw_exception_ex(zpheur_caches_middleware_invalidargumentexception_class_entry, 0,
+                "Value ($middlewares_list) must be type of array, %s given", ZTYPE_TO_STR(Z_TYPE_P(middleware)));
+            RETURN_THROWS();
         }
 
         cached_middlewares_src[instance->common->cached_middlewares_len].action_name =
@@ -167,19 +177,28 @@ PHP_METHOD(Middleware, __construct)
         size_t index = 0;
         ZEND_HASH_FOREACH_VAL(Z_ARR_P(middleware), zval* each_middleware)
         {
-            if( Z_TYPE_P(each_middleware) != IS_ARRAY )
-            {
-                php_error_docref(NULL, E_ERROR, "middleware value must be type of array");
+            if( Z_TYPE_P(each_middleware) != IS_ARRAY ) {
+                zend_throw_exception_ex(zpheur_caches_middleware_invalidargumentexception_class_entry, 0,
+                    "Expected middleware format as array, %s given", ZTYPE_TO_STR(Z_TYPE_P(each_middleware)));
+                RETURN_THROWS();
             }
 
             zval* middleware_name = zend_hash_index_find(Z_ARR_P(each_middleware), 0);
             zval* properties = zend_hash_index_find(Z_ARR_P(each_middleware), 1);
 
-            if( !middleware_name || Z_TYPE_P(middleware_name) != IS_STRING )
-                php_error_docref(NULL, E_ERROR, "format are not supported 11");
+            if( !middleware_name || Z_TYPE_P(middleware_name) != IS_STRING ) {
+                zend_throw_exception_ex(zpheur_caches_middleware_invalidargumentexception_class_entry, 0,
+                    "Argument #1 ($middleware_action) must be type of string, %s given",
+                    ZTYPE_TO_STR(Z_TYPE_P(middleware_name)));
+            }
 
-            if( !properties || Z_TYPE_P(properties) != IS_ARRAY )
-                php_error_docref(NULL, E_ERROR, "format are not supported 22");
+            if( !properties || Z_TYPE_P(properties) != IS_ARRAY ) {
+                zend_throw_exception_ex(zpheur_caches_middleware_invalidargumentexception_class_entry, 0,
+                    "Argument #2 ($middleware_properties) must be type of array, %s given",
+                    ZTYPE_TO_STR(Z_TYPE_P(properties)));
+            }
+
+            // TODO should add more checks for properties parser name validation?
 
             zend_string* name = zval_get_string(middleware_name);
             cached_middlewares_src[instance->common->cached_middlewares_len]
