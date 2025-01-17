@@ -35,10 +35,8 @@ void free_application_object(zend_object *object)
     application_object* instance = ZPHEUR_GET_OBJECT(application_object, object);
 
     zend_object_std_dtor(&instance->std);
-    if( instance->common )
-    {
-    	if( instance->common->base_namespace )
-    	{
+    if( instance->common ) {
+    	if( instance->common->base_namespace ) {
     		onec_string_release(instance->common->base_namespace);
     	}
         efree(instance->common);       
@@ -99,8 +97,9 @@ PHP_METHOD(Application, withBaseNamespace)
     application_object* instance = 
         ZPHEUR_ZVAL_GET_OBJECT(application_object, getThis());
 
-   	if( instance->common->base_namespace != NULL )
+   	if( instance->common->base_namespace != NULL ) {
    		onec_string_release(instance->common->base_namespace);
+   	}
 
    	instance->common->base_namespace = onec_string_initd(base_namespace_src, base_namespace_len);
 
@@ -138,27 +137,17 @@ PHP_METHOD(Application, withBaseNamespace)
 #define CONSOLE_STATE_CLASS    			4
 #define CONSOLE_STATE_METHOD    		5
 
-static int console_class_method_parser(
-	char* base_namespace,
-	zend_string* target_class_zs,
-	onec_stringlc* target_class,
-	onec_stringlc* target_method
-)
+static int console_class_method_parser( char* base_namespace, zend_string* target_class_zs, onec_stringlc* target_class, onec_stringlc* target_method )
 {
 	onec_string_appendlc(*target_class, 1, base_namespace);
+	int state = CONSOLE_STATE_INIT;
+	char input;
 
-	int 	state = CONSOLE_STATE_INIT;
-	char 	input;
-
-	for( int index = 0; index < target_class_zs->len; index += 1 )
-	{
+	for( int index = 0; index < target_class_zs->len; index += 1 ) {
 		input = target_class_zs->val[index];
-
-		switch( state )
-		{
+		switch( state ) {
 			case CONSOLE_STATE_INIT:
-				switch( input )
-				{
+				switch( input ) {
 					case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
 					case TOKEN_SYMBOL_UNDERSCORE:
 						index -= 1;
@@ -184,8 +173,7 @@ static int console_class_method_parser(
 				onec_string_putlc(*target_method, input);
 			break;
 			case CONSOLE_STATE_CLASS:
-				switch( input )
-				{
+				switch( input ) {
 					case TOKEN_SYMBOL_SLASH:
 					case TOKEN_SYMBOL_COLON:
 						state = CONSOLE_STATE_INIT;
@@ -203,8 +191,7 @@ static int console_class_method_parser(
 				}
 			break;
 			case CONSOLE_STATE_METHOD:
-				switch( input )
-				{
+				switch( input ) {
 					case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
 					case TOKEN_ALPHA_UPPER_START ... TOKEN_ALPHA_UPPER_END:
 					case TOKEN_DIGIT_START ... TOKEN_DIGIT_END:
@@ -219,8 +206,9 @@ static int console_class_method_parser(
 		}
 	}
 
-	if(! (*target_method).len )
+	if(! (*target_method).len ) {
 		onec_string_appendlc(*target_class, 1, "Action");
+	}
 
 	return 1;
 
@@ -228,26 +216,17 @@ static int console_class_method_parser(
 	return 0;
 }
 
-static int console_subns_class_method_parser(
-	char* base_namespace,
-	zend_string* target_class_zs,
-	onec_stringlc* target_class
-)
+static int console_subns_class_method_parser( char* base_namespace, zend_string* target_class_zs, onec_stringlc* target_class )
 {
 	onec_string_appendlc(*target_class, 1, base_namespace);
+	int state = CONSOLE_STATE_INIT;
+	char input;
 
-	int 	state = CONSOLE_STATE_INIT;
-	char 	input;
-
-	for( int index = 0; index < target_class_zs->len; index += 1 )
-	{
+	for( int index = 0; index < target_class_zs->len; index += 1 ) {
 		input = target_class_zs->val[index];
-
-		switch( state )
-		{
+		switch( state ) {
 			case CONSOLE_STATE_INIT:
-				switch( input )
-				{
+				switch( input ) {
 					case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
 					case TOKEN_SYMBOL_UNDERSCORE:
 						index -= 1;
@@ -273,8 +252,7 @@ static int console_subns_class_method_parser(
 				onec_string_putlc(*target_class, toupper(input));
 			break;
 			case CONSOLE_STATE_CLASS: // make
-				switch( input )
-				{
+				switch( input ) {
 					case TOKEN_SYMBOL_SLASH:
 					case TOKEN_SYMBOL_COLON:
 						state = CONSOLE_STATE_INIT;
@@ -292,8 +270,7 @@ static int console_subns_class_method_parser(
 				}
 			break;
 			case CONSOLE_STATE_METHOD: // route
-				switch( input )
-				{
+				switch( input ) {
 					case TOKEN_ALPHA_LOWER_START ... TOKEN_ALPHA_LOWER_END:
 					case TOKEN_ALPHA_UPPER_START ... TOKEN_ALPHA_UPPER_END:
 					case TOKEN_DIGIT_START ... TOKEN_DIGIT_END:
@@ -316,9 +293,7 @@ static int console_subns_class_method_parser(
 	return 0;
 }
 
-// static zval*
-static HashTable*
-application_class_method_dispatcher( char* base_namespace, zval* input_argument, zend_object* action_resolver )
+static HashTable* application_class_method_dispatcher( char* base_namespace, zval* input_argument, zend_object* action_resolver )
 {
 	/* move index 0 to 1 */
 	zval* target_action = zend_hash_index_find(Z_ARR_P(input_argument), 1); // After "bin/console"
@@ -336,14 +311,14 @@ application_class_method_dispatcher( char* base_namespace, zval* input_argument,
     // zend_hash_str_add(dispatch, "method", sizeof("method") - 1, &target_method_empty);
 
     do {
-		if(! target_action )
+		if(! target_action ) {
         	break;
+		}
 
 		zend_string* target_action_zs = Z_STR_P(target_action);
-
-		int    parse_success;
-		int    second_parse = 0;
-		char   input;
+		int parse_success;
+		int second_parse = 0;
+		char input;
 
 		onec_stringlc target_class;
 		onec_stringlc target_method;
@@ -355,30 +330,30 @@ application_class_method_dispatcher( char* base_namespace, zval* input_argument,
 		zend_object* target_class_init = NULL;
 
 		__ext_second_parse:
-		if(! second_parse )
+		if(! second_parse ) {
 			parse_success = console_class_method_parser(
 				base_namespace, target_action_zs,
 				&target_class, &target_method
 			);
-		else
-		{
+		} else {
 			onec_string_resetlc(target_class);
 			parse_success = console_subns_class_method_parser(
 				base_namespace, target_action_zs, &target_class
 			);
 		}
 
-		if( !parse_success || !target_class.len )
+		if( !parse_success || !target_class.len ) {
     		goto local_cleanup;
+		}
 
 		onec_string_trimlc(target_class);
 		target_class_init = // Only check class exists, clean up soon
 			php_class_init_silent(target_class.val, target_class.len);
 
-		if(! target_class_init )
-		{
-			if( second_parse )
+		if(! target_class_init ) {
+			if( second_parse ) {
 				goto local_cleanup;
+			}
 
         	second_parse = 1;
         	goto __ext_second_parse;
@@ -391,26 +366,20 @@ application_class_method_dispatcher( char* base_namespace, zval* input_argument,
 		ZEND_HASH_FOREACH_PTR(&target_class_init->ce->function_table, zend_function* value) 
         {
         	// Is method are public modifier
-           	if(! (value->common.fn_flags & ZEND_ACC_PUBLIC) )
+           	if(! (value->common.fn_flags & ZEND_ACC_PUBLIC) ) {
            		continue;
+           	}
 
-        	if( !second_parse && 
-        		zend_string_equals_cstr(
-    			value->common.function_name, target_method.val, target_method.len
-        		)
-        	)
-        	{
+        	if( !second_parse && zend_string_equals_cstr(
+			value->common.function_name, target_method.val, target_method.len) ) {
 				ZVAL_STRINGL(&method_name, target_method.val, target_method.len);	
 				goto __ext_target_found;
-			} else
-			if( zend_string_equals_cstr(
-				value->common.function_name, "__invoke", sizeof("__invoke") - 1)
-			)
-			{
-				ZVAL_STRINGL(&method_name, "__invoke", sizeof("__invoke") - 1);	
-				goto __ext_target_found;
-            }
-
+			} else {
+				if( zend_string_equals_cstr(value->common.function_name, "__invoke", sizeof("__invoke") - 1) ) {
+					ZVAL_STRINGL(&method_name, "__invoke", sizeof("__invoke") - 1);	
+					goto __ext_target_found;
+	            }
+			}
         } ZEND_HASH_FOREACH_END(); 
 
     	goto local_cleanup;
@@ -428,8 +397,9 @@ application_class_method_dispatcher( char* base_namespace, zval* input_argument,
 		return dispatch;
 
 		local_cleanup:
-		if( target_class_init )
+		if( target_class_init ) {
 			zend_object_release(target_class_init); // clean up
+		}
 	} while(0);
 
 	zval* params = (zval*)safe_emalloc(1, sizeof(zval), 0);
@@ -485,8 +455,7 @@ PHP_METHOD(Application, run)
 	// zend_hash_destroy(dispatched);
 	// FREE_HASHTABLE(dispatched);
 
-	if(! EG(exception) )
-	{
+	if(! EG(exception) ) {
 		// A resolver for middleware list check [block step]
 		zval* params_process = safe_emalloc(2, sizeof(zval), 0);
 		zval zv_table; ZVAL_ARR(&zv_table, dispatched);
@@ -517,32 +486,26 @@ PHP_METHOD(Application, run)
 		    	{	
 		    		bool is_property = zend_string_equals(zpi_property->name, prop_name);
 
-		    		if( Z_PHP_ACC_PUBLIC(zpi_property->flags) && is_property )
-		    		{
+		    		if( Z_PHP_ACC_PUBLIC(zpi_property->flags) && is_property ) {
 						zend_update_property(middleware_class->ce, middleware_class, prop_name->val, prop_name->len, prop_value);
 						goto skip_error;
 		    		}
 
-		    		if( property_name_compare_offset_x(zpi_property->name, prop_name) )
-		    		{
-			    		if( Z_PHP_ACC_PROTECTED(zpi_property->flags) )
-			    		{
+		    		if( property_name_compare_offset_x(zpi_property->name, prop_name) ) {
+			    		if( Z_PHP_ACC_PROTECTED(zpi_property->flags) ) {
 			    			zend_error(
 								E_ERROR,
 								"Cannot assign to protected property '%s::$%s'",
 								middleware_class_name->val,
-								// property_name_src
 								zpi_property->name->val
 							);
 			    		}
 
-						if( Z_PHP_ACC_PRIVATE(zpi_property->flags) )
-			    		{
+						if( Z_PHP_ACC_PRIVATE(zpi_property->flags) ) {
 			    			zend_error(
 								E_ERROR,
 								"Cannot assign to private property '%s::$%s'",
 								middleware_class_name->val,
-								// property_name_src
 								zpi_property->name->val
 							);
 			    		}
@@ -575,13 +538,11 @@ PHP_METHOD(Application, run)
 				php_class_call_method(argument_resolver,
 					"resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
 
-				if( Z_TYPE_P(middleware_params_src) != IS_NULL )
-				{
+				if( Z_TYPE_P(middleware_params_src) != IS_NULL ) {
 					zend_ulong 	middleware_params_len = zend_hash_num_elements(Z_ARR_P(middleware_params_src));
 					zval* 		middleware_params_resolve = (zval*)safe_emalloc(middleware_params_len, sizeof(zval), 0);
 
-					for( int i = 0; i < middleware_params_len; i += 1)
-					{
+					for( int i = 0; i < middleware_params_len; i += 1) {
 						middleware_params_resolve[i] = *(zend_hash_index_find(Z_ARR_P(middleware_params_src), i));
 					}
 
@@ -610,13 +571,11 @@ PHP_METHOD(Application, run)
 				zval* middleware_params_src =
 					php_class_call_method(argument_resolver, "resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
 
-				if( Z_TYPE_P(middleware_params_src) != IS_NULL )
-				{
+				if( Z_TYPE_P(middleware_params_src) != IS_NULL ) {
 					zend_ulong middleware_params_len = zend_hash_num_elements(Z_ARR_P(middleware_params_src));
 					zval* middleware_params_resolve = (zval*)safe_emalloc(middleware_params_len, sizeof(zval), 0);
 
-					for( int i = 0; i < middleware_params_len; i += 1)
-					{
+					for( int i = 0; i < middleware_params_len; i += 1) {
 						middleware_params_resolve[i] = *(zend_hash_index_find(Z_ARR_P(middleware_params_src), i));
 					}
 
@@ -628,9 +587,7 @@ PHP_METHOD(Application, run)
 					zend_hash_graceful_reverse_destroy(Z_ARR_P(middleware_params_src));
 					FREE_HASHTABLE(Z_ARR_P(middleware_params_src));
 					efree(middleware_params_resolve);
-				}
-				else
-				{
+				} else {
 					php_error_docref(NULL,
 		        		E_CORE_ERROR, "Call to undefined method %s::process()",
 		        		middleware_class_name->val);
@@ -647,8 +604,7 @@ PHP_METHOD(Application, run)
 					efree(local_return_action);
 				break; // Ignore null return or void
 				default:
-					if(! EXPECTED(EG(exception)) ) // throw exception
-					{
+					if(! EXPECTED(EG(exception)) ) { // throw exception
 						php_error_docref(NULL, E_ERROR,
 							"%s::process() return type must be integer or void",
 							middleware_class_name->val
@@ -699,13 +655,11 @@ PHP_METHOD(Application, run)
 			zval* method_action_param_src =
 				php_class_call_method(argument_resolver, "resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
 
-			if( Z_TYPE_P(method_action_param_src) != IS_NULL )
-			{
+			if( Z_TYPE_P(method_action_param_src) != IS_NULL ) {
 				zend_ulong 	method_action_param_len = zend_hash_num_elements(Z_ARR_P(method_action_param_src));
 				zval* middleware_params_resolve = (zval*)safe_emalloc(method_action_param_len, sizeof(zval), 0);
 
-				for( int i = 0; i < method_action_param_len; i += 1)
-				{
+				for( int i = 0; i < method_action_param_len; i += 1) {
 					middleware_params_resolve[i] = *(zend_hash_index_find(Z_ARR_P(method_action_param_src), i));
 				}
 
@@ -722,8 +676,7 @@ PHP_METHOD(Application, run)
 			efree(params_resolve);
 		} while(0); // Action constructor
 
-		if( EG(exception) )
-	    { 
+		if( EG(exception) ) { 
 	        goto early_disturb;
 	    }
 
@@ -744,10 +697,8 @@ PHP_METHOD(Application, run)
 			zend_ulong method_action_param_len = zend_hash_num_elements(Z_ARR_P(method_action_param_src));
 			zval* middleware_params_resolve = (zval*)safe_emalloc(method_action_param_len, sizeof(zval), 0);
 
-			if( Z_TYPE_P(method_action_param_src) != IS_NULL || method_action_param_len > 0 )
-			{
-				for( int i = 0; i < method_action_param_len; i++ )
-				{
+			if( Z_TYPE_P(method_action_param_src) != IS_NULL || method_action_param_len > 0 ) {
+				for( int i = 0; i < method_action_param_len; i++ ) {
 					middleware_params_resolve[i] = 
 					*(zend_hash_index_find(Z_ARR_P(method_action_param_src), i));
 				}
@@ -758,9 +709,7 @@ PHP_METHOD(Application, run)
 
 				zend_hash_destroy(Z_ARR_P(method_action_param_src));
 				FREE_HASHTABLE(Z_ARR_P(method_action_param_src));
-			}
-			else
-			{
+			} else {
 				php_error_docref(NULL,
 	        		E_CORE_ERROR, "Call to undefined method %s::%s()",
 	        		Z_STR_P(action_class)->val, Z_STR_P(action_method)->val);
@@ -770,14 +719,12 @@ PHP_METHOD(Application, run)
 			zend_string_release(action_call);
 			efree(method_action_param_src);
 
-			switch( (1 << Z_TYPE_P(local_return_action)) )
-			{
+			switch( (1 << Z_TYPE_P(local_return_action)) ) {
 				case MAY_BE_LONG:
 					efree(local_return_action);
 				break;
 				default:
-					if( EXPECTED(EG(exception)) )
-					{
+					if( EXPECTED(EG(exception)) ) {
 						zend_object_release(class_action);
 						efree(local_return_action);
 
@@ -844,13 +791,11 @@ PHP_METHOD(Application, terminate)
 		zval* method_action_param_src =
 			php_class_call_method(argument_resolver, "resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
 
-		if( Z_TYPE_P(method_action_param_src) != IS_NULL )
-		{
+		if( Z_TYPE_P(method_action_param_src) != IS_NULL ) {
 			zend_ulong 	method_action_param_len = zend_hash_num_elements(Z_ARR_P(method_action_param_src));
 			zval* middleware_params_resolve = (zval*)safe_emalloc(method_action_param_len, sizeof(zval), 0);
 
-			for( int i = 0; i < method_action_param_len; i += 1)
-			{
+			for( int i = 0; i < method_action_param_len; i += 1) {
 				middleware_params_resolve[i] = *(zend_hash_index_find(Z_ARR_P(method_action_param_src), i));
 			}
 
@@ -867,8 +812,7 @@ PHP_METHOD(Application, terminate)
 		efree(params_resolve);
 	} while(0); // Action constructor
 
-	if( EG(exception) )
-    { 
+	if( EG(exception) ) { 
     	php_error_docref(NULL, E_ERROR,
     		"UncaughtError: Exception already thrown");
     }
@@ -887,10 +831,8 @@ PHP_METHOD(Application, terminate)
 		zend_ulong method_action_param_len = zend_hash_num_elements(Z_ARR_P(method_action_param_src));
 		zval* middleware_params_resolve = (zval*)safe_emalloc(method_action_param_len, sizeof(zval), 0);
 
-		if( Z_TYPE_P(method_action_param_src) != IS_NULL || method_action_param_len > 0 )
-		{
-			for( int i = 0; i < method_action_param_len; i++ )
-			{
+		if( Z_TYPE_P(method_action_param_src) != IS_NULL || method_action_param_len > 0 ) {
+			for( int i = 0; i < method_action_param_len; i++ ) {
 				middleware_params_resolve[i] = 
 				*(zend_hash_index_find(Z_ARR_P(method_action_param_src), i));
 			}
@@ -900,9 +842,7 @@ PHP_METHOD(Application, terminate)
 					method_action_param_len, middleware_params_resolve, 0);
 			zend_hash_destroy(Z_ARR_P(method_action_param_src));
 			FREE_HASHTABLE(Z_ARR_P(method_action_param_src));
-		}
-		else
-		{
+		} else {
 			php_error_docref(NULL,
         		E_CORE_ERROR, "Call to undefined method %s::%s()",
         		class_src, method_src);
@@ -911,16 +851,15 @@ PHP_METHOD(Application, terminate)
 		efree(middleware_params_resolve);
 		efree(method_action_param_src);
 
-		switch( (1 << Z_TYPE_P(local_return_action)) )
-		{
+		switch( (1 << Z_TYPE_P(local_return_action)) ) {
 			case MAY_BE_LONG:
 				efree(local_return_action);
 			break;
 			default:
-				if( EG(exception) ) // throw exception
-				{
-					if( Z_TYPE_P(local_return_action) == IS_OBJECT )
+				if( EG(exception) ) { // throw exception
+					if( Z_TYPE_P(local_return_action) == IS_OBJECT ) {
 						zend_object_release(Z_OBJ_P(local_return_action));
+					}
 					efree(local_return_action);
 					zend_object_release(class_action);
 					goto early_disturb;
