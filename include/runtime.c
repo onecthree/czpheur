@@ -314,6 +314,15 @@ void php_call_static_method( zend_object* object, char* const method_src, size_t
     // zval_ptr_dtor(&function_name);
 }
 
+
+inline __attribute__ ((always_inline)) zend_object*
+php_class_init_ce( zend_class_entry* ce )
+{
+    zval object;
+    object_init_ex(&object, ce);
+    return Z_OBJ_P(&object);
+}
+
 zend_object* php_class_init( char* class_name_src, size_t class_name_len )
 {
     zval object;
@@ -418,6 +427,55 @@ void php_class_call_dtor( zend_object* object )
     }
     
     return_void: { }
+}
+
+void php_class_call_method_stacked( zend_object* zend_object_class, char* const method_src, 
+size_t method_len, zend_long param_counts, zval* params, zval* return_value, bool silent )
+{
+    zend_string* method;
+    zend_result result;
+
+    method = zend_string_init(method_src, method_len, 0);
+    result = zend_call_method_if_exists(
+        zend_object_class, method, return_value, param_counts, params
+    );
+
+    zend_string_release(method);
+
+    if( result != SUCCESS && !silent )
+    {
+        php_error_docref(NULL,
+            E_CORE_ERROR, "Call to undefined method %s::%s()",
+            zend_object_class->ce->name->val, method_src);
+    }
+
+    // TODO: need improve error and exception throw to php-land
+    do
+    {
+        if( EG(exception) )
+        { 
+            zend_object* error_exception = EG(exception);
+
+            if( zend_hash_num_elements(&error_exception->ce->properties_info) )
+            {
+                zval* exception_msg = zend_target_read_property_ex(zend_ce_exception, error_exception, "message");
+
+                if( Z_TYPE_P(exception_msg) != IS_STRING )
+                    zend_bailout();
+            }
+            else
+            {
+                zend_bailout();
+            }
+
+            break;
+        }
+
+
+        if( Z_ISREF_P(return_value) )
+            zend_unwrap_reference(return_value);
+    }
+    while(0);
 }
 
 zval* php_class_call_method( zend_object* zend_object_class, char* const method_src, size_t method_len, zend_long param_counts, zval* params, bool silent )

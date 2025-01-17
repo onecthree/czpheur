@@ -86,6 +86,8 @@ zend_object* php_class_init_silent(
     size_t class_name_len 
 );
 
+zend_object* php_class_init_ce( zend_class_entry* ce );
+
 zend_object* php_class_init(
     char* class_name_src,
     size_t class_name_len
@@ -98,6 +100,16 @@ void php_class_call_constructor(
 );
 
 void php_class_call_dtor( zend_object* object );
+
+void php_class_call_method_stacked(
+    zend_object*        zend_object_class, 
+    char* const         method_src,
+    size_t              method_len,
+    zend_long           param_counts, 
+    zval*               params, 
+    zval*               return_value,
+    bool                silent
+);
 
 zval* php_class_call_method(
     zend_object*        zend_object_class, 
