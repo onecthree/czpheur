@@ -129,9 +129,14 @@ static PHP_MINIT_FUNCTION(zpheur)
 
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Reflection_ActionResolver)(INIT_FUNC_ARGS_PASSTHRU);
   	ZEND_MODULE_STARTUP_N(Zpheur_Actions_Reflection_ArgumentResolver)(INIT_FUNC_ARGS_PASSTHRU);
+  	
+  	ZEND_MODULE_STARTUP_N(Zpheur_Caches_SimpleCache)(INIT_FUNC_ARGS_PASSTHRU);
+  	ZEND_MODULE_STARTUP_N(Zpheur_Caches_SimpleCache_CacheInterface)(INIT_FUNC_ARGS_PASSTHRU);  	
 
-  	ZEND_MODULE_STARTUP_N(Zpheur_Caches_Adapter_Filesystem_ItemTagHandler)(INIT_FUNC_ARGS_PASSTHRU);
   	ZEND_MODULE_STARTUP_N(Zpheur_Caches_Adapter_Filesystem)(INIT_FUNC_ARGS_PASSTHRU);
+  	ZEND_MODULE_STARTUP_N(Zpheur_Caches_Adapter_Filesystem_ItemTagHandler)(INIT_FUNC_ARGS_PASSTHRU);
+
+  	ZEND_MODULE_STARTUP_N(Zpheur_Caches_Cache_Adapter_Memcached)(INIT_FUNC_ARGS_PASSTHRU);
 
   	ZEND_MODULE_STARTUP_N(Zpheur_Consoles_Input_InputArgument)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Consoles_Runtime_Application)(INIT_FUNC_ARGS_PASSTHRU);
@@ -145,8 +150,8 @@ static PHP_MINIT_FUNCTION(zpheur)
 	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Foundation_Kernel)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Foundation_ServerBag)(INIT_FUNC_ARGS_PASSTHRU);
 
-	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Message_RequestInterface)(INIT_FUNC_ARGS_PASSTHRU);
-	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Message_ResponseInterface)(INIT_FUNC_ARGS_PASSTHRU);
+	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Message_Request_RequestInterface)(INIT_FUNC_ARGS_PASSTHRU);
+	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Message_Response_ResponseInterface)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Message_HeaderTrait)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Message_Request)(INIT_FUNC_ARGS_PASSTHRU);
 	ZEND_MODULE_STARTUP_N(Zpheur_Schemes_Http_Message_Response)(INIT_FUNC_ARGS_PASSTHRU);

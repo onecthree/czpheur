@@ -8,14 +8,6 @@
 #define _ZCLI_ERROR_HANDLER 	(1 << 1)
 #define _ZWEB_ERROR_HANDLER 	(1 << 2)
 
-#define BITW_IS_NULL        (1 << IS_NULL)
-#define BITW_IS_LONG        (1 << IS_LONG)
-#define BITW_IS_DOUBLE      (1 << IS_DOUBLE)
-#define BITW_IS_STRING      (1 << IS_STRING)
-#define BITW_IS_ARRAY       (1 << IS_ARRAY)
-#define BITW_IS_OBJECT      (1 << IS_OBJECT)
-#define BITW_IS_CLOSURE     (1 << IS_CLOSURE)
-
 #if PHP_VERSION_ID < 80400
 #define Z_PHP_ACC_PUBLIC(x)         (x & ZEND_ACC_PUBLIC)
 #define Z_PHP_ACC_PROTECTED(x)      (x & ZEND_ACC_PROTECTED)
@@ -61,5 +53,8 @@ property_name_compare_offset_x( zend_string* source,  zend_string* target )
 
 #define zpheur_hash_str_find( src, name ) \
     zend_hash_str_find(src, name, sizeof(name) - 1)
+    
+#define zend_static_read_property( ce, name ) \
+    zend_read_static_property(ce, name, sizeof(name) - 1, 0)
 
 #endif
