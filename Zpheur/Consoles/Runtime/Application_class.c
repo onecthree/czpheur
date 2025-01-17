@@ -293,6 +293,7 @@ static int console_subns_class_method_parser( char* base_namespace, zend_string*
 	return 0;
 }
 
+/* {{{ application_class_method_dispatcher */
 static HashTable* application_class_method_dispatcher( char* base_namespace, zval* input_argument, zend_object* action_resolver )
 {
 	/* move index 0 to 1 */
@@ -408,21 +409,21 @@ static HashTable* application_class_method_dispatcher( char* base_namespace, zva
 	zval copy; ZVAL_ARR(&copy, dispatch);
 	params[0] = copy;
 
-	zval* default_dispatch =
-		php_class_call_method(action_resolver, 
-			"bindIfDefaultAction", sizeof("bindIfDefaultAction") - 1, 1, params, 0);
+	zval default_dispatch;
+	php_class_call_method_stacked(action_resolver, "bindIfDefaultAction", sizeof("bindIfDefaultAction") - 1,
+		1, params, &default_dispatch, 0);
 	efree(params);
 
 	zend_hash_clean(dispatch);
-	zend_hash_copy(dispatch, Z_ARR_P(default_dispatch), zval_add_ref);
+	zend_hash_copy(dispatch, Z_ARR(default_dispatch), zval_add_ref);
 
-	zend_hash_destroy(Z_ARR_P(default_dispatch));
-	FREE_HASHTABLE(Z_ARR_P(default_dispatch));
-	efree(default_dispatch);
+	zend_hash_destroy(Z_ARR(default_dispatch));
+	FREE_HASHTABLE(Z_ARR(default_dispatch));
 
 	return dispatch;
-}
+} /* application_class_method_dispatcher }}} */
 
+/* {{{ run */
 PHP_METHOD(Application, run)
 {
 	ZEND_PARSE_PARAMETERS_NONE();
@@ -439,39 +440,34 @@ PHP_METHOD(Application, run)
 
 	// Literally check if method was found or not [block step]
 	/* use prop instead method */
-	zval* input_argument_value =
-		php_class_call_method(input_argument, "listAllValues", sizeof("listAllValues") - 1, 0, NULL, 0);
+	zval input_argument_value;
+	php_class_call_method_stacked(input_argument, "listAllValues", sizeof("listAllValues") - 1,
+		0, NULL, &input_argument_value, 0);
 
 	char* cs_base_namespace = onec_string_get(base_namespace);
 	// zval* dispatched =
 	HashTable* dispatched =
-		application_class_method_dispatcher(cs_base_namespace, input_argument_value, action_resolver);
+		application_class_method_dispatcher(cs_base_namespace, &input_argument_value, action_resolver);
 
-	zend_hash_destroy(Z_ARR_P(input_argument_value));
-	FREE_HASHTABLE(Z_ARR_P(input_argument_value));
-	efree(input_argument_value);
+	zend_hash_destroy(Z_ARR(input_argument_value));
+	FREE_HASHTABLE(Z_ARR(input_argument_value));
 	free(cs_base_namespace);
-
-	// zend_hash_destroy(dispatched);
-	// FREE_HASHTABLE(dispatched);
 
 	if(! EG(exception) ) {
 		// A resolver for middleware list check [block step]
 		zval* params_process = safe_emalloc(2, sizeof(zval), 0);
 		zval zv_table; ZVAL_ARR(&zv_table, dispatched);
-		// params_process[0] = *dispatched;
 		params_process[0] = zv_table;
 		zval zv_true; ZVAL_TRUE(&zv_true);
 		params_process[1] = zv_true;
 
-		zval* before_middlewares =
-			php_class_call_method(action_resolver, 
-				"beforeMiddlewaresResolve", sizeof("beforeMiddlewaresResolve") - 1, 
-				2, params_process, 0);
+		zval before_middlewares;
+		php_class_call_method_stacked(action_resolver, "beforeMiddlewaresResolve",
+			sizeof("beforeMiddlewaresResolve") - 1, 2, params_process, &before_middlewares, 0);
 		efree(params_process);
 
 		// Iteration for middleware list arg parse [block step]
-		ZEND_HASH_FOREACH_VAL(Z_ARR_P(before_middlewares), zval* middleware)
+		ZEND_HASH_FOREACH_VAL(Z_ARR(before_middlewares), zval* middleware)
 		{		
 			zval* middleware_cname = zend_hash_index_find(Z_ARR_P(middleware), 0);
 			zval* middleware_props = zend_hash_index_find(Z_ARR_P(middleware), 1);
@@ -534,31 +530,30 @@ PHP_METHOD(Application, run)
 				zval _construct; ZVAL_STR(&_construct, _zs_construct);
 				params_resolve[1] = _construct;
 
-				zval* middleware_params_src =
-				php_class_call_method(argument_resolver,
-					"resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
+				zval middleware_params_src;
+				php_class_call_method_stacked(argument_resolver,
+					"resolve", sizeof("resolve") - 1, 2, params_resolve, &middleware_params_src, 0);
 
-				if( Z_TYPE_P(middleware_params_src) != IS_NULL ) {
-					zend_ulong 	middleware_params_len = zend_hash_num_elements(Z_ARR_P(middleware_params_src));
+				if( Z_TYPE(middleware_params_src) != IS_NULL ) {
+					zend_ulong 	middleware_params_len = zend_hash_num_elements(Z_ARR(middleware_params_src));
 					zval* 		middleware_params_resolve = (zval*)safe_emalloc(middleware_params_len, sizeof(zval), 0);
 
 					for( int i = 0; i < middleware_params_len; i += 1) {
-						middleware_params_resolve[i] = *(zend_hash_index_find(Z_ARR_P(middleware_params_src), i));
+						middleware_params_resolve[i] = *(zend_hash_index_find(Z_ARR(middleware_params_src), i));
 					}
 
 					php_class_call_constructor(middleware_class, middleware_params_len, middleware_params_resolve);
-					zend_hash_graceful_reverse_destroy(Z_ARR_P(middleware_params_src));
-					FREE_HASHTABLE(Z_ARR_P(middleware_params_src));
+					zend_hash_graceful_reverse_destroy(Z_ARR(middleware_params_src));
+					FREE_HASHTABLE(Z_ARR(middleware_params_src));
 					efree(middleware_params_resolve);
 				} // when construct not found; if may can inherit from the parent (?)
 
-				efree(middleware_params_src);
 				zend_string_release(_zs_construct);
 				efree(params_resolve);
 			}
 
 			/* Call middleware method */
-			zval* local_return_action = NULL;
+			zval local_return_action;
 			do {
 				zval* params_resolve = (zval*)safe_emalloc(2, sizeof(zval), 0);
 
@@ -568,24 +563,24 @@ PHP_METHOD(Application, run)
 				zval process_param; ZVAL_STR(&process_param, process_str);
 				params_resolve[1] = process_param;
 
-				zval* middleware_params_src =
-					php_class_call_method(argument_resolver, "resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
+				zval middleware_params_src;
+				php_class_call_method_stacked(argument_resolver, "resolve", sizeof("resolve") - 1, 2,
+					params_resolve, &middleware_params_src, 0);
 
-				if( Z_TYPE_P(middleware_params_src) != IS_NULL ) {
-					zend_ulong middleware_params_len = zend_hash_num_elements(Z_ARR_P(middleware_params_src));
+				if( Z_TYPE(middleware_params_src) != IS_NULL ) {
+					zend_ulong middleware_params_len = zend_hash_num_elements(Z_ARR(middleware_params_src));
 					zval* middleware_params_resolve = (zval*)safe_emalloc(middleware_params_len, sizeof(zval), 0);
 
 					for( int i = 0; i < middleware_params_len; i += 1) {
-						middleware_params_resolve[i] = *(zend_hash_index_find(Z_ARR_P(middleware_params_src), i));
+						middleware_params_resolve[i] = *(zend_hash_index_find(Z_ARR(middleware_params_src), i));
 					}
 
 					// It should return zval ptr
-					local_return_action =
-					php_class_call_method(middleware_class, "process", sizeof("process") - 1,
-					middleware_params_len, middleware_params_resolve, 0);
+					php_class_call_method_stacked(middleware_class, "process", sizeof("process") - 1,
+					middleware_params_len, middleware_params_resolve, &local_return_action, 0);
 
-					zend_hash_graceful_reverse_destroy(Z_ARR_P(middleware_params_src));
-					FREE_HASHTABLE(Z_ARR_P(middleware_params_src));
+					zend_hash_graceful_reverse_destroy(Z_ARR(middleware_params_src));
+					FREE_HASHTABLE(Z_ARR(middleware_params_src));
 					efree(middleware_params_resolve);
 				} else {
 					php_error_docref(NULL,
@@ -593,15 +588,14 @@ PHP_METHOD(Application, run)
 		        		middleware_class_name->val);
 				}
 
-				efree(middleware_params_src);
 				zend_string_release(process_str);
 				efree(params_resolve);
 			} while(0);
 
-			switch( (1 << Z_TYPE_P(local_return_action)) )
+			switch( (1 << Z_TYPE(local_return_action)) )
 			{
 				case MAY_BE_NULL: 
-					efree(local_return_action);
+					// efree(local_return_action);
 				break; // Ignore null return or void
 				default:
 					if(! EXPECTED(EG(exception)) ) { // throw exception
@@ -612,13 +606,12 @@ PHP_METHOD(Application, run)
 						break;
 					}
 				case MAY_BE_LONG:
-					efree(local_return_action);
+					// efree(local_return_action);
 					zend_object_release(middleware_class);
 					zend_string_release(middleware_class_name);
 
-					zend_hash_destroy(Z_ARR_P(before_middlewares));
-					FREE_HASHTABLE(Z_ARR_P(before_middlewares));
-					efree(before_middlewares);
+					zend_hash_destroy(Z_ARR(before_middlewares));
+					FREE_HASHTABLE(Z_ARR(before_middlewares));
 					goto early_disturb;
 				break;
 			}
@@ -628,15 +621,12 @@ PHP_METHOD(Application, run)
 		}
 		ZEND_HASH_FOREACH_END(); // Before middleware
 
-		zend_hash_destroy(Z_ARR_P(before_middlewares));
-		FREE_HASHTABLE(Z_ARR_P(before_middlewares));
-		efree(before_middlewares);
+		zend_hash_destroy(Z_ARR(before_middlewares));
+		FREE_HASHTABLE(Z_ARR(before_middlewares));
 
 		zval* action_class = 
-			// zend_hash_str_find(Z_ARR_P(dispatched), "class", sizeof("class") - 1);
 			zend_hash_str_find(dispatched, "class", sizeof("class") - 1);
 		zval* action_method = 
-			// zend_hash_str_find(Z_ARR_P(dispatched), "method", sizeof("method") - 1);
 			zend_hash_str_find(dispatched, "method", sizeof("method") - 1);
 
 		zend_object* class_action = 
@@ -652,26 +642,26 @@ PHP_METHOD(Application, run)
 			zval __zv_construct; ZVAL_STR(&__zv_construct, _construct);
 			params_resolve[1] = __zv_construct;
 
-			zval* method_action_param_src =
-				php_class_call_method(argument_resolver, "resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
+			zval method_action_param_src;
+			php_class_call_method_stacked(argument_resolver, "resolve", sizeof("resolve") - 1, 2,
+				params_resolve, &method_action_param_src, 0);
 
-			if( Z_TYPE_P(method_action_param_src) != IS_NULL ) {
-				zend_ulong 	method_action_param_len = zend_hash_num_elements(Z_ARR_P(method_action_param_src));
+			if( Z_TYPE(method_action_param_src) != IS_NULL ) {
+				zend_ulong 	method_action_param_len = zend_hash_num_elements(Z_ARR(method_action_param_src));
 				zval* middleware_params_resolve = (zval*)safe_emalloc(method_action_param_len, sizeof(zval), 0);
 
 				for( int i = 0; i < method_action_param_len; i += 1) {
-					middleware_params_resolve[i] = *(zend_hash_index_find(Z_ARR_P(method_action_param_src), i));
+					middleware_params_resolve[i] = *(zend_hash_index_find(Z_ARR(method_action_param_src), i));
 				}
 
 				// Construct no return value
 				php_class_call_constructor(class_action, method_action_param_len, middleware_params_resolve);	
 
-				zend_hash_graceful_reverse_destroy(Z_ARR_P(method_action_param_src));
-				FREE_HASHTABLE(Z_ARR_P(method_action_param_src));
+				zend_hash_graceful_reverse_destroy(Z_ARR(method_action_param_src));
+				FREE_HASHTABLE(Z_ARR(method_action_param_src));
 				efree(middleware_params_resolve);
 			} // when construct not found; if may can inherit from the parent (?)
 		
-			efree(method_action_param_src);
 			zend_string_release(_construct);
 			efree(params_resolve);
 		} while(0); // Action constructor
@@ -681,34 +671,35 @@ PHP_METHOD(Application, run)
 	    }
 
 		/* Call action method */
-		zval* local_return_action = NULL;
+		zval local_return_action;
 		do {
 			zval* params_resolve = (zval*)safe_emalloc(2, sizeof(zval), 0);
 			params_resolve[0] = *action_class;
 			params_resolve[1] = *action_method;
 
-			zval* method_action_param_src =
-				php_class_call_method(argument_resolver, "resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
+			zval method_action_param_src;
+			php_class_call_method_stacked(argument_resolver, "resolve", sizeof("resolve") - 1, 2,
+				params_resolve, &method_action_param_src, 0);
 			efree(params_resolve);
 
 			// it should return zval ptr
 			zend_string* action_call = zval_get_string(action_method);
 
-			zend_ulong method_action_param_len = zend_hash_num_elements(Z_ARR_P(method_action_param_src));
+			zend_ulong method_action_param_len = zend_hash_num_elements(Z_ARR(method_action_param_src));
 			zval* middleware_params_resolve = (zval*)safe_emalloc(method_action_param_len, sizeof(zval), 0);
 
-			if( Z_TYPE_P(method_action_param_src) != IS_NULL || method_action_param_len > 0 ) {
+			if( Z_TYPE(method_action_param_src) != IS_NULL || method_action_param_len > 0 ) {
 				for( int i = 0; i < method_action_param_len; i++ ) {
 					middleware_params_resolve[i] = 
-					*(zend_hash_index_find(Z_ARR_P(method_action_param_src), i));
+					*(zend_hash_index_find(Z_ARR(method_action_param_src), i));
 				}
 
-				local_return_action =
-					php_class_call_method(class_action, action_call->val, action_call->len,
-						method_action_param_len, middleware_params_resolve, 0);
+				// local_return_action =
+				php_class_call_method_stacked(class_action, action_call->val, action_call->len,
+					method_action_param_len, middleware_params_resolve, &local_return_action, 0);
 
-				zend_hash_destroy(Z_ARR_P(method_action_param_src));
-				FREE_HASHTABLE(Z_ARR_P(method_action_param_src));
+				zend_hash_destroy(Z_ARR(method_action_param_src));
+				FREE_HASHTABLE(Z_ARR(method_action_param_src));
 			} else {
 				php_error_docref(NULL,
 	        		E_CORE_ERROR, "Call to undefined method %s::%s()",
@@ -717,16 +708,16 @@ PHP_METHOD(Application, run)
 
 			efree(middleware_params_resolve);
 			zend_string_release(action_call);
-			efree(method_action_param_src);
 
-			switch( (1 << Z_TYPE_P(local_return_action)) ) {
+			switch( (1 << Z_TYPE(local_return_action)) ) {
 				case MAY_BE_LONG:
-					efree(local_return_action);
+				    zend_register_long_constant("EXIT_CODE", sizeof("EXIT_CODE") - 1, 
+				        zval_get_long(&local_return_action), CONST_CS | CONST_PERSISTENT, 51);
 				break;
 				default:
 					if( EXPECTED(EG(exception)) ) {
 						zend_object_release(class_action);
-						efree(local_return_action);
+						// efree(local_return_action);
 
 						goto early_disturb;
 						break;
@@ -741,15 +732,16 @@ PHP_METHOD(Application, run)
 		} while(0); // Action method
 
 		zend_object_release(class_action);
-		efree(local_return_action);
+		// efree(local_return_action);
 	} // If throw except
 
 	early_disturb:
 
 	zend_hash_destroy(dispatched);
 	FREE_HASHTABLE(dispatched);
-} // End run
+} /* run }}} */
 
+/* {{{ terminate */
 PHP_METHOD(Application, terminate)
 {
 	char* class_src = NULL;
@@ -762,7 +754,10 @@ PHP_METHOD(Application, terminate)
 		Z_PARAM_STRING(method_src, method_len)
 	ZEND_PARSE_PARAMETERS_END();
 
-	// exception cleared
+	// Exception cleared
+	if( EG(exception) ) {
+		zend_clear_exception();
+	}
 
     application_object* instance = 
         ZPHEUR_ZVAL_GET_OBJECT(application_object, getThis());
@@ -788,26 +783,26 @@ PHP_METHOD(Application, terminate)
 		zval __zv_construct; ZVAL_STR(&__zv_construct, _construct);
 		params_resolve[1] = __zv_construct;
 
-		zval* method_action_param_src =
-			php_class_call_method(argument_resolver, "resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
+		zval method_action_param_src;
+		php_class_call_method_stacked(argument_resolver, "resolve", sizeof("resolve") - 1, 2,
+			params_resolve, &method_action_param_src, 0);
 
-		if( Z_TYPE_P(method_action_param_src) != IS_NULL ) {
-			zend_ulong 	method_action_param_len = zend_hash_num_elements(Z_ARR_P(method_action_param_src));
+		if( Z_TYPE(method_action_param_src) != IS_NULL ) {
+			zend_ulong 	method_action_param_len = zend_hash_num_elements(Z_ARR(method_action_param_src));
 			zval* middleware_params_resolve = (zval*)safe_emalloc(method_action_param_len, sizeof(zval), 0);
 
 			for( int i = 0; i < method_action_param_len; i += 1) {
-				middleware_params_resolve[i] = *(zend_hash_index_find(Z_ARR_P(method_action_param_src), i));
+				middleware_params_resolve[i] = *(zend_hash_index_find(Z_ARR(method_action_param_src), i));
 			}
 
 			// Construct no return value
 			php_class_call_constructor(class_action, method_action_param_len, middleware_params_resolve);	
 
-			zend_hash_graceful_reverse_destroy(Z_ARR_P(method_action_param_src));
-			FREE_HASHTABLE(Z_ARR_P(method_action_param_src));
+			zend_hash_graceful_reverse_destroy(Z_ARR(method_action_param_src));
+			FREE_HASHTABLE(Z_ARR(method_action_param_src));
 			efree(middleware_params_resolve);
 		} // when construct not found; if may can inherit from the parent (?)
 	
-		efree(method_action_param_src);
 		zend_string_release(_construct);
 		efree(params_resolve);
 	} while(0); // Action constructor
@@ -818,30 +813,32 @@ PHP_METHOD(Application, terminate)
     }
 
 	/* Call action method */
-	zval* local_return_action = NULL;
+	zval local_return_action;
 	do {
 		zval* params_resolve = (zval*)safe_emalloc(2, sizeof(zval), 0);
 		params_resolve[0] = zv_class_name;
 		params_resolve[1] = zv_method_name;
 
-		zval* method_action_param_src =
-			php_class_call_method(argument_resolver, "resolve", sizeof("resolve") - 1, 2, params_resolve, 0);
+		// zval* method_action_param_src =
+		zval method_action_param_src;
+		php_class_call_method_stacked(argument_resolver, "resolve", sizeof("resolve") - 1, 2,
+			params_resolve, &method_action_param_src, 0);
 		efree(params_resolve);
 
-		zend_ulong method_action_param_len = zend_hash_num_elements(Z_ARR_P(method_action_param_src));
+		zend_ulong method_action_param_len = zend_hash_num_elements(Z_ARR(method_action_param_src));
 		zval* middleware_params_resolve = (zval*)safe_emalloc(method_action_param_len, sizeof(zval), 0);
 
-		if( Z_TYPE_P(method_action_param_src) != IS_NULL || method_action_param_len > 0 ) {
+		if( Z_TYPE(method_action_param_src) != IS_NULL || method_action_param_len > 0 ) {
 			for( int i = 0; i < method_action_param_len; i++ ) {
 				middleware_params_resolve[i] = 
-				*(zend_hash_index_find(Z_ARR_P(method_action_param_src), i));
+				*(zend_hash_index_find(Z_ARR(method_action_param_src), i));
 			}
 
-			local_return_action =
-				php_class_call_method(class_action, method_src, method_len,
-					method_action_param_len, middleware_params_resolve, 0);
-			zend_hash_destroy(Z_ARR_P(method_action_param_src));
-			FREE_HASHTABLE(Z_ARR_P(method_action_param_src));
+			php_class_call_method_stacked(class_action, method_src, method_len,
+				method_action_param_len, middleware_params_resolve, &local_return_action, 0);
+
+			zend_hash_destroy(Z_ARR(method_action_param_src));
+			FREE_HASHTABLE(Z_ARR(method_action_param_src));
 		} else {
 			php_error_docref(NULL,
         		E_CORE_ERROR, "Call to undefined method %s::%s()",
@@ -849,18 +846,18 @@ PHP_METHOD(Application, terminate)
 		}
 
 		efree(middleware_params_resolve);
-		efree(method_action_param_src);
 
-		switch( (1 << Z_TYPE_P(local_return_action)) ) {
+		switch( (1 << Z_TYPE(local_return_action)) ) {
 			case MAY_BE_LONG:
-				efree(local_return_action);
+			    zend_register_long_constant("EXIT_CODE", sizeof("EXIT_CODE") - 1, 
+			        zval_get_long(&local_return_action), CONST_CS | CONST_PERSISTENT, 51);
 			break;
 			default:
 				if( EG(exception) ) { // throw exception
-					if( Z_TYPE_P(local_return_action) == IS_OBJECT ) {
-						zend_object_release(Z_OBJ_P(local_return_action));
+					if( Z_TYPE(local_return_action) == IS_OBJECT ) {
+						zend_object_release(Z_OBJ(local_return_action));
 					}
-					efree(local_return_action);
+					// efree(local_return_action);
 					zend_object_release(class_action);
 					goto early_disturb;
 				}
@@ -876,14 +873,16 @@ PHP_METHOD(Application, terminate)
 	zend_string_release(class_name);
 	zend_string_release(method_name);
 
-	// if( EG(exception) )
-	// {
-    // 	php_error_docref(NULL, E_ERROR,
-    // 		"UncaughtError: Exception already thrown");
-	// }
+	if( EG(exception) ) {
+    	// php_error_docref(NULL, E_ERROR,
+    	// 	"UncaughtError: Exception already thrown");
+    	zend_clear_exception();
+	}
 
-	early_disturb: {}
-}
+	early_disturb: {
+		// TODO exit
+	}
+} /* terminate }}} */
 
 ZEND_MINIT_FUNCTION(Zpheur_Consoles_Runtime_Application)
 {	
