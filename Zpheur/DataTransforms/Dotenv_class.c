@@ -9,7 +9,7 @@
 #include <zpheur.h>
 #include <include/runtime.h>
 #include <include/dotenv.h>
-#include <include/libstr.h>
+#include <include/strings.h>
 #include "Dotenv_arginfo.h"
 
 zend_object_handlers dotenv_object_handlers;

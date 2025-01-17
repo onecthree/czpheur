@@ -6,7 +6,7 @@
 #include <zpheur.h>
 #include <include/runtime.h>
 #include <include/furouter.h>
-#include <include/libstr.h>
+#include <include/strings.h>
 #include <Zpheur/Schemes/Http/Routing/Route_arginfo.h>
 #include "Dispatcher_arginfo.h"
 

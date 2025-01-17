@@ -8,7 +8,7 @@
 #include <include/onecstr.h>
 #include <zpheur.h>
 #include <include/runtime.h>
-#include <include/libstr.h>
+#include <include/strings.h>
 #include <include/furouter.h>
 #include "Route_arginfo.h"
 
